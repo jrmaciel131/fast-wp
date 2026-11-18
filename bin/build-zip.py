@@ -1,6 +1,6 @@
-"""Gera build/fast-wp.zip (pasta fast-wp/ com barras normais, pronto para o WordPress).
+"""Builds build/fast-wp.zip (fast-wp/ folder with forward slashes, ready for WordPress).
 
-Uso: python bin/build-zip.py
+Usage: python bin/build-zip.py
 """
 import fnmatch
 import os
@@ -32,4 +32,4 @@ with zipfile.ZipFile(OUT, 'w', zipfile.ZIP_DEFLATED) as z:
                 continue
             z.write(os.path.join(root, name), 'fast-wp/' + rel)
             count += 1
-print(f'{OUT}: {count} arquivos')
+print(f'{OUT}: {count} files')

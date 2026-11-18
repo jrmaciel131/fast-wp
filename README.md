@@ -1,82 +1,94 @@
 # Fast WP
 
-Plugin de desempenho para WordPress + Elementor, sem versão paga e sem serviço externo.
-Tudo roda no próprio servidor e cada recurso tem uma caixa para ligar ou desligar.
+**English** · [Português](README.pt-BR.md)
 
-## O que ele faz
+A free WordPress performance plugin built for Elementor sites. No paid tier, no external services: everything runs on your own server, and every feature has its own on/off checkbox.
 
-| Área | Recursos |
+## Features
+
+| Area | What it does |
 |---|---|
-| Cache | Cache de página em disco (servido pelo Apache ou pelo PHP), GZIP, cache do navegador, pré-carregamento, limpeza automática ao editar no Elementor. URLs de anúncio (`utm_*`, `gclid`, `fbclid`, `gbraid`...) continuam usando o cache. |
-| CSS | Minificação, **remoção do CSS não usado** por página (com lista segura para menus, popups e efeitos do Elementor), CSS completo carregado depois da primeira interação como garantia. |
-| JavaScript | **Atraso até a interação**, defer (inclusive jQuery, mantendo a ordem dos scripts), minificação opcional. Pixels e GTM não são atrasados por padrão (PixelYourSite é detectado e o jQuery é mantido junto). |
-| Imagens | Lazy load, imagem principal (LCP) com prioridade e preload, miniatura no lugar do YouTube, lazy load de fundos, WebP criado no servidor. |
-| Fontes | Google Fonts servidas pelo próprio site, `font-display: swap`, preload da fonte principal. |
-| Limpeza | Emojis, embeds, cabeçalho, XML-RPC, Dashicons, CSS do Gutenberg, jQuery Migrate, Heartbeat. |
-| Outros | CDN, limpeza do banco, exportar e importar configurações entre sites, atualização automática pelo GitHub. |
+| Cache | Page cache on disk (served by Apache or PHP), GZIP, browser caching, preloading, automatic purge when you edit with Elementor. Ad URLs (`utm_*`, `gclid`, `fbclid`, `gbraid`...) still use the cache. |
+| CSS | Minification and **unused CSS removal** per page, with a safelist for Elementor menus, popups and effects. The full CSS loads after the first interaction as a safety net. |
+| JavaScript | **Delay until interaction**, defer (jQuery included, keeping script order), optional minification. Pixels and GTM are not delayed by default; PixelYourSite is detected and jQuery is kept with it. |
+| Images | Lazy load, main image (LCP) with high priority and preload, YouTube thumbnail instead of the player, lazy background images, WebP created on the server. |
+| Fonts | Self-hosted Google Fonts, `font-display: swap`, optional preload of the main font. |
+| Cleanup | Emojis, embeds, head tags, XML-RPC, Dashicons, Gutenberg CSS, jQuery Migrate, Heartbeat. |
+| Other | CDN, database cleanup, settings export/import between sites, automatic updates from GitHub, English and Portuguese interface. |
 
-## Segurança
+## Safety
 
-- **Modo de teste:** depois de instalado, os visitantes ainda não recebem as otimizações. Para ver a versão otimizada, abra o site com `?fwp_test=1` (o link do PageSpeed no painel já inclui isso). `?fwp_off=1` mostra a página sem nenhuma otimização.
-- **Falha segura:** se uma otimização der erro, a página original é entregue e o erro aparece no painel.
-- **Autoteste:** depois de cada atualização, o plugin abre a página inicial. Se houver erro, ele liga o modo de segurança sozinho e desliga as otimizações.
-- **Emergência:** `define( 'FAST_WP_DISABLE', true );` no `wp-config.php` desliga tudo na hora.
-- **Desativar desfaz tudo:** remove as regras do `.htaccess`, o `advanced-cache.php` e a linha `WP_CACHE` do `wp-config.php`.
+- **Test mode:** after installing, visitors do not get the optimizations yet. Open the site with `?fwp_test=1` to see the optimized version (the PageSpeed button in the dashboard already adds it). `?fwp_off=1` shows the page without any optimization.
+- **Fail-safe:** if an optimization fails, the original page is served and the error is shown in the dashboard.
+- **Self-test:** after every update the plugin opens the home page. If it finds an error, it turns safe mode on by itself and switches the optimizations off.
+- **Emergency switch:** `define( 'FAST_WP_DISABLE', true );` in `wp-config.php` turns everything off immediately.
+- **Clean deactivation:** removes the `.htaccess` rules, `advanced-cache.php` and the `WP_CACHE` line from `wp-config.php`.
 
-## Instalação
+## Installation
 
-1. Desative o WP Fastest Cache (ou outro plugin de cache/otimização) e limpe o cache dele.
-2. Envie o `fast-wp.zip` em Plugins > Adicionar novo > Enviar plugin e ative.
-3. No menu **Fast WP**, use **Testar no PageSpeed** e navegue pelo site com `?fwp_test=1`.
-4. Se estiver tudo certo, clique em **Liberar otimizações para os visitantes**.
+1. Deactivate any other cache/optimization plugin (WP Fastest Cache, WP Rocket...) and clear its cache.
+2. Download `fast-wp.zip` from the [latest release](../../releases/latest) and upload it in Plugins > Add New > Upload Plugin.
+3. In the **Fast WP** menu, use **Test on PageSpeed** and browse the site with `?fwp_test=1`.
+4. When everything looks right, click **Go live for visitors**.
 
-Recomendado no Elementor (Elementor > Configurações > Recursos): ativar "Lazy Load Background Images".
+Recommended in Elementor (Elementor > Settings > Features): enable "Lazy Load Background Images".
 
-## Atualizações pelo GitHub
+## Language
 
-1. Crie o repositório no GitHub e envie este código.
-2. Em **Fast WP > Avançado**, preencha `usuario/repositorio` (ou defina `FAST_WP_GITHUB_REPO` no `fast-wp.php` antes de gerar o zip).
-3. Para lançar uma versão: mude a versão no cabeçalho e em `FAST_WP_VERSION` do `fast-wp.php`, faça o commit e crie a tag:
-   - `v0.2.0-beta.1` → pré-lançamento: só os sites no canal **Teste** recebem.
-   - `v0.2.0` → versão estável: todos os sites recebem.
-4. A GitHub Action confere a sintaxe (PHP 7.4 e 8.3), roda os testes, gera o `fast-wp.zip` e publica a release.
+The plugin follows the WordPress language by default. To force a language, go to **Fast WP > Advanced > Plugin language**. Translations live in `languages/{locale}.php`; to add a language, copy `languages/pt_BR.php`, translate the values and add the locale to `I18n::LANGUAGES`.
 
-Sugestão: deixe um site de menor risco no canal **Teste** e os outros no **Estável**.
+## Updates from GitHub
 
-## Testes
+Sites only update when a new **release** is published (a `v*` tag). A regular commit does not update anything.
+
+1. In **Fast WP > Advanced**, the repository field must point to `owner/repository` (or set `FAST_WP_GITHUB_REPO` in `fast-wp.php`).
+2. To ship a version: change the version in the header and in `FAST_WP_VERSION` in `fast-wp.php`, commit, then push a tag:
+   - `v0.2.0-beta.1` → pre-release: only sites on the **Beta** channel get it.
+   - `v0.2.0` → stable: every site gets it.
+3. The GitHub Action checks the syntax (PHP 7.4 and 8.3), runs the tests, builds `fast-wp.zip` and publishes the release.
+4. Each site checks GitHub every 6 hours and WordPress installs the update automatically.
+
+Tip: keep one low-risk site on the **Beta** channel and the others on **Stable**.
+
+## Development
 
 ```bash
-php tests/run.php
+php tests/run.php            # automated tests (no WordPress needed)
+python bin/build-zip.py      # builds build/fast-wp.zip
 ```
 
-Teste com uma página real (copie o HTML e os CSS do site para `tests/fixtures/`):
+Test with a real page (copy the page HTML and its CSS files into `tests/fixtures/`):
 
 ```bash
-FWP_TEST_ROOT=tests/fixtures/site FWP_TEST_HOME=https://www.seusite.com.br php tests/real-site.php tests/fixtures/home.html
+FWP_TEST_ROOT=tests/fixtures/site FWP_TEST_HOME=https://www.yoursite.com php tests/real-site.php tests/fixtures/home.html
 ```
 
-## Estrutura
+## Structure
 
 ```
-fast-wp.php                     cabeçalho do plugin e carregamento
-includes/class-plugin.php       ganchos, ativação, desativação, agendamentos
-includes/class-settings.php     campos das abas, padrões, predefinições
-includes/class-request.php      regras do cache (também usada pelo advanced-cache.php)
-includes/class-cache.php        captura, gravação, limpeza e pré-carregamento do cache
-includes/class-htaccess.php     regras do Apache
-includes/class-optimizer.php    junta as otimizações (com falha segura)
-includes/class-css.php          minificação e CSS não usado
-includes/class-used-css.php     decide quais regras de CSS a página usa
-includes/class-css-parser.php   leitor de CSS
-includes/class-js.php           atraso, defer e o carregador do navegador
-includes/class-media.php        lazy load, LCP, YouTube, fundos, WebP
-includes/class-fonts.php        Google Fonts local e font-display
-includes/class-webp.php         conversão para WebP no servidor
-includes/class-cleanup.php      limpeza do WordPress
-includes/class-database.php     limpeza do banco
-includes/class-self-test.php    autoteste
-includes/class-updater.php      atualizações pelo GitHub
-includes/class-admin.php        tela de opções, avisos e barra de administração
+fast-wp.php                     plugin header and loading
+languages/pt_BR.php             Portuguese translation
+includes/class-plugin.php       hooks, activation, deactivation, schedules
+includes/class-settings.php     tabs, fields, defaults, presets
+includes/class-i18n.php         translations
+includes/class-request.php      cache rules (also used by advanced-cache.php)
+includes/class-cache.php        capture, storage, purge and preload of the cache
+includes/class-htaccess.php     Apache rules
+includes/class-optimizer.php    runs the optimizations (fail-safe)
+includes/class-css.php          minification and unused CSS
+includes/class-used-css.php     decides which CSS rules a page uses
+includes/class-css-parser.php   CSS parser
+includes/class-js.php           delay, defer and the browser loader
+includes/class-media.php        lazy load, LCP, YouTube, backgrounds, WebP
+includes/class-fonts.php        self-hosted Google Fonts and font-display
+includes/class-webp.php         WebP conversion on the server
+includes/class-cleanup.php      WordPress cleanup
+includes/class-database.php     database cleanup
+includes/class-self-test.php    self-test
+includes/class-updater.php      updates from GitHub
+includes/class-admin.php        settings screen, notices and admin bar
 ```
 
-Licença: GPL-2.0-or-later.
+## License
+
+[GPL-2.0-or-later](LICENSE), the same license as WordPress.

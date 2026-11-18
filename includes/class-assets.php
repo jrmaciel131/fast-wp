@@ -1,6 +1,6 @@
 <?php
 /**
- * Funções comuns para arquivos: URL <-> caminho, gravação de arquivos otimizados e WebP.
+ * File helpers: URL <-> path, writing optimized files and WebP.
  *
  * @package FastWP
  */
@@ -23,7 +23,7 @@ class Assets {
 	}
 
 	/**
-	 * Converte a URL de um arquivo do site no caminho do arquivo no servidor.
+	 * Converts the URL of a site file into its path on the server.
 	 *
 	 * @return string|null
 	 */
@@ -60,7 +60,7 @@ class Assets {
 	}
 
 	/**
-	 * Grava um arquivo otimizado (nome pelo conteúdo) e devolve a URL.
+	 * Writes an optimized file (named by its content) and returns its URL.
 	 *
 	 * @return string|null
 	 */
@@ -83,7 +83,7 @@ class Assets {
 		return self::url( $ext . '/' . $name );
 	}
 
-	/** Lê um arquivo do cache de processamento (por chave). */
+	/** Reads a file from the processing cache (by key). */
 	public static function memo_get( $key ) {
 		$file = self::dir( 'memo' ) . '/' . $key;
 		return is_file( $file ) ? file_get_contents( $file ) : null; // phpcs:ignore
@@ -99,10 +99,10 @@ class Assets {
 		}
 	}
 
-	/** Resolve uma URL relativa a partir da URL do arquivo CSS. */
+	/** Resolves a relative URL against the URL of the CSS file. */
 	public static function resolve( $base_url, $rel ) {
 		if ( preg_match( '#^(?:[a-z][a-z0-9+.-]*:|//|\#)#i', $rel ) ) {
-			return $rel; // Já é absoluta, data:, ou âncora.
+			return $rel; // Already absolute, data: or an anchor.
 		}
 		$parts = wp_parse_url( $base_url );
 		if ( ! $parts || empty( $parts['host'] ) ) {
@@ -132,8 +132,8 @@ class Assets {
 	}
 
 	/**
-	 * Troca a URL de uma imagem JPG/PNG pela versão WebP, se existir.
-	 * As versões WebP ficam ao lado do original: foto.jpg -> foto.jpg.webp
+	 * Swaps a JPG/PNG image URL for its WebP copy, when it exists.
+	 * WebP copies sit next to the original: photo.jpg -> photo.jpg.webp
 	 */
 	public static function webp( $url ) {
 		if ( ! Settings::get( 'webp_serve' ) || ! preg_match( '#\.(jpe?g|png)(\?.*)?$#i', $url ) ) {
@@ -152,7 +152,7 @@ class Assets {
 		return $out;
 	}
 
-	/** Aplica WebP em todas as URLs de um srcset. */
+	/** Applies WebP to every URL of a srcset. */
 	public static function webp_srcset( $srcset ) {
 		$items = array_map( 'trim', explode( ',', $srcset ) );
 		foreach ( $items as &$item ) {
@@ -165,7 +165,7 @@ class Assets {
 		return implode( ', ', $items );
 	}
 
-	/** Lista de URLs de scripts e trechos que contam como pixel/rastreamento. */
+	/** Script URLs and snippets that count as tracking pixels. */
 	public static function tracker_patterns() {
 		return array(
 			'googletagmanager.com', 'gtag(', 'gtm.js', 'dataLayer', 'google-analytics.com', 'googleadservices.com',
@@ -174,12 +174,12 @@ class Assets {
 		);
 	}
 
-	/** Plugins de pixel que precisam do jQuery carregado. */
+	/** Pixel plugins that need jQuery to be loaded. */
 	public static function jquery_trackers() {
 		return array( 'pixelyoursite', 'pysOptions', 'pys-version', 'pys-pbid', 'pys_' );
 	}
 
-	/** True se o texto contém algum dos trechos da lista. */
+	/** True when the text contains any of the listed snippets. */
 	public static function matches( $haystack, array $needles ) {
 		foreach ( $needles as $n ) {
 			if ( '' !== $n && false !== stripos( $haystack, $n ) ) {

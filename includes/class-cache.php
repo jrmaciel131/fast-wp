@@ -1,6 +1,6 @@
 <?php
 /**
- * Cache de página: captura o HTML, otimiza, grava, limpa e pré-carrega.
+ * Page cache: captures the HTML, optimizes, stores, purges and preloads.
  *
  * @package FastWP
  */
@@ -16,7 +16,7 @@ class Cache {
 	const PRELOAD_QUEUE = 'fast_wp_preload_queue';
 	const LAST_PURGE    = 'fast_wp_last_purge';
 
-	/** @var array|null Destino do cache da requisição atual. */
+	/** @var array|null Cache target of the current request. */
 	private static $target = null;
 
 	/** @var bool */
@@ -25,7 +25,7 @@ class Cache {
 	/** @var string */
 	private static $buffer = '';
 
-	/** Decide, no template_redirect, se esta página será otimizada e/ou guardada no cache. */
+	/** Decides on template_redirect whether this page is optimized and/or cached. */
 	public static function start() {
 		if ( defined( 'FAST_WP_DISABLE' ) && FAST_WP_DISABLE ) {
 			return;
@@ -82,7 +82,7 @@ class Cache {
 			$html = $opt->process( $html );
 		}
 		if ( self::$target && ! ( defined( 'DONOTCACHEPAGE' ) && DONOTCACHEPAGE ) && 200 === http_response_code() ) {
-			$stamp = "\n<!-- fwp: cache gerado em " . gmdate( 'Y-m-d H:i:s' ) . ' UTC -->';
+			$stamp = "\n<!-- fwp: cached at " . gmdate( 'Y-m-d H:i:s' ) . ' UTC -->';
 			Request::store( self::$target, $html . $stamp );
 		}
 		return $html;
@@ -100,7 +100,7 @@ class Cache {
 		return true;
 	}
 
-	/** Páginas do site (não painel, não AJAX, não editor do Elementor). */
+	/** Front-end pages only (not admin, AJAX or the Elementor editor). */
 	private static function is_frontend_page() {
 		if ( is_admin() || wp_doing_ajax() || wp_doing_cron() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 			return false;
@@ -120,7 +120,7 @@ class Cache {
 		return isset( $_SERVER['REQUEST_METHOD'] ) && in_array( strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) ), array( 'GET', 'HEAD' ), true );
 	}
 
-	/** Regras do WordPress para guardar no cache. */
+	/** WordPress rules for caching. */
 	private static function page_is_cacheable() {
 		if ( is_user_logged_in() || is_404() || is_search() || post_password_required() ) {
 			return false;
@@ -138,7 +138,7 @@ class Cache {
 	public static function purge_all() {
 		$dir = FAST_WP_CACHE_DIR . '/pages';
 		if ( is_dir( $dir ) ) {
-			// Renomeia antes de apagar: o site nunca vê um cache pela metade.
+			// Rename before deleting: the site never sees a half-deleted cache.
 			$trash = FAST_WP_CACHE_DIR . '/trash-' . uniqid();
 			if ( @rename( $dir, $trash ) ) { // phpcs:ignore
 				self::rrmdir( $trash );
@@ -147,14 +147,14 @@ class Cache {
 			}
 		}
 		update_option( self::LAST_PURGE, time(), false );
-		Htaccess::write_pages_htaccess(); // Recria os cabeçalhos da pasta do cache.
+		Htaccess::write_pages_htaccess(); // Recreates the headers of the cache folder.
 		if ( Settings::get( 'cache_preload' ) ) {
 			self::schedule_preload( 30 );
 		}
 		do_action( 'fast_wp_purged_all' );
 	}
 
-	/** Limpa o cache de uma URL (todas as variações: celular, https). */
+	/** Purges the cache of one URL (all variants: mobile, https). */
 	public static function purge_url( $url ) {
 		$parts = wp_parse_url( $url );
 		if ( empty( $parts['host'] ) ) {
@@ -166,7 +166,7 @@ class Cache {
 		}
 	}
 
-	/** Chamado quando um post muda. */
+	/** Called when a post changes. */
 	public static function on_post_change( $post_id ) {
 		if ( wp_is_post_revision( $post_id ) || wp_is_post_autosave( $post_id ) ) {
 			return;
@@ -219,7 +219,7 @@ class Cache {
 		}
 	}
 
-	/** Remove arquivos de cache vencidos e arquivos otimizados que não são mais usados. */
+	/** Removes expired cache files and optimized files that are no longer used. */
 	public static function cleanup_expired() {
 		$life = (int) Settings::get( 'cache_lifespan' ) * HOUR_IN_SECONDS;
 		$now  = time();
@@ -237,7 +237,7 @@ class Cache {
 			}
 		}
 
-		// Arquivos otimizados: todas as páginas geradas depois da última limpeza "tocam" os arquivos que usam.
+		// Optimized files: every page generated after the last purge "touches" the files it uses.
 		$limit = (int) get_option( self::LAST_PURGE, 0 );
 		if ( $life > 0 ) {
 			$limit = max( $limit, $now - $life );
@@ -265,14 +265,14 @@ class Cache {
 		@rmdir( $dir ); // phpcs:ignore
 	}
 
-	/** Remove todos os arquivos gerados (páginas e arquivos otimizados). */
+	/** Removes every generated file (pages and optimized files). */
 	public static function purge_everything() {
 		self::purge_all();
 		self::rrmdir( Assets::dir() );
 	}
 
 	/* ---------------------------------------------------------------------
-	 * Pré-carregamento
+	 * Preloading
 	 * ------------------------------------------------------------------- */
 
 	public static function schedule_preload( $delay = 30 ) {
@@ -284,7 +284,7 @@ class Cache {
 		wp_schedule_single_event( time() + $delay, 'fast_wp_preload' );
 	}
 
-	/** URLs a pré-carregar: página inicial, páginas e posts publicados. */
+	/** URLs to preload: home page, published pages and posts. */
 	public static function preload_urls() {
 		$urls  = array( home_url( '/' ) );
 		$types = array_values( array_diff( get_post_types( array( 'public' => true ) ), array( 'attachment', 'elementor_library', 'e-landing-page' ) ) );
@@ -314,7 +314,7 @@ class Cache {
 		return array_values( $urls );
 	}
 
-	/** Processa um lote da fila (chamado pelo WP-Cron). */
+	/** Processes one batch of the queue (called by WP-Cron). */
 	public static function run_preload() {
 		$queue = get_option( self::PRELOAD_QUEUE, array() );
 		if ( ! is_array( $queue ) || ! $queue ) {
@@ -360,7 +360,7 @@ class Cache {
 			return false;
 		}
 		$code = (string) file_get_contents( $file ); // phpcs:ignore
-		// Arquivo vazio (sobra de outro plugin já removido) pode ser substituído.
+		// An empty file (left over by a removed plugin) can be replaced.
 		if ( '' === trim( $code ) || '<?php' === trim( $code ) ) {
 			return false;
 		}
@@ -414,7 +414,7 @@ class Cache {
 			$code = preg_replace( '/^.*' . preg_quote( self::CONFIG_MARK, '/' ) . '.*\R?/m', '', $code );
 		}
 		if ( false === strpos( $code, 'wp-settings.php' ) ) {
-			return false; // Conteúdo inesperado: não grava.
+			return false; // Unexpected content: do not write.
 		}
 		return false !== file_put_contents( $file, $code, LOCK_EX ); // phpcs:ignore
 	}

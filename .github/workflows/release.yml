@@ -1,5 +1,5 @@
-# Gera o fast-wp.zip e publica a release quando uma tag "v*" é enviada.
-# Tag com "-beta" ou "-rc" (ex.: v0.2.0-beta.1) vira pré-lançamento: só sites no canal "Teste" recebem.
+# Builds fast-wp.zip and publishes the release when a "v*" tag is pushed.
+# Tags with "-beta" or "-rc" (e.g. v0.2.0-beta.1) become pre-releases: only sites on the "Beta" channel get them.
 name: Release
 
 on:
@@ -15,28 +15,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Conferir sintaxe PHP (7.4 e 8.3)
+      - name: Check PHP syntax (7.4 and 8.3)
         run: |
           for v in 7.4 8.3; do
             docker run --rm -v "$PWD":/app -w /app php:$v-cli sh -c 'find . -name "*.php" -not -path "./tests/*" -print0 | xargs -0 -n1 php -l' || exit 1
           done
 
-      - name: Rodar os testes
+      - name: Run the tests
         run: docker run --rm -v "$PWD":/app -w /app php:8.3-cli php tests/run.php
 
-      - name: Conferir versão
+      - name: Check the version
         run: |
           TAG="${GITHUB_REF_NAME#v}"
-          grep -q "Version: *$TAG$" fast-wp.php || { echo "A versão no fast-wp.php não bate com a tag $TAG"; exit 1; }
-          grep -q "'FAST_WP_VERSION', '$TAG'" fast-wp.php || { echo "FAST_WP_VERSION não bate com a tag $TAG"; exit 1; }
+          grep -q "Version: *$TAG$" fast-wp.php || { echo "The version in fast-wp.php does not match tag $TAG"; exit 1; }
+          grep -q "'FAST_WP_VERSION', '$TAG'" fast-wp.php || { echo "FAST_WP_VERSION does not match tag $TAG"; exit 1; }
 
-      - name: Montar o zip
+      - name: Build the zip
         run: |
           mkdir -p build/fast-wp
           rsync -a --exclude-from=.distignore ./ build/fast-wp/
           cd build && zip -qr fast-wp.zip fast-wp
 
-      - name: Publicar release
+      - name: Publish the release
         uses: softprops/action-gh-release@v2
         with:
           files: build/fast-wp.zip

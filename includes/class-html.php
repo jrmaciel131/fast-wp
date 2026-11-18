@@ -1,6 +1,6 @@
 <?php
 /**
- * Utilitários para mexer no HTML sem quebrar a marcação.
+ * Helpers to change HTML without breaking the markup.
  *
  * @package FastWP
  */
@@ -14,11 +14,11 @@ class Html {
 	/** @var array */
 	private $saved = array();
 
-	/** @var int Contador global: cada instância gera marcadores diferentes (evita trocar o bloco errado). */
+	/** @var int Global counter: each instance creates different placeholders (avoids swapping the wrong block). */
 	private static $counter = 0;
 
 	/**
-	 * Troca blocos que não devem ser alterados (comentários, scripts...) por marcadores.
+	 * Replaces blocks that must not change (comments, scripts...) with placeholders.
 	 *
 	 * @param string   $html HTML.
 	 * @param string[] $what comment, script, style, noscript, textarea, template, pre.
@@ -50,9 +50,9 @@ class Html {
 		return $html;
 	}
 
-	/** Devolve os blocos protegidos. */
+	/** Puts the protected blocks back. */
 	public function restore( $html ) {
-		// Restaura em ordem reversa para lidar com blocos aninhados.
+		// Restore in several passes to handle nested blocks.
 		for ( $i = 0; $i < 3 && false !== strpos( $html, "\x1Afwp" ); $i++ ) {
 			$html = strtr( $html, $this->saved );
 		}
@@ -60,7 +60,7 @@ class Html {
 		return $html;
 	}
 
-	/** Lê os atributos de uma tag. Atributos sem valor ficam como true. */
+	/** Reads the attributes of a tag. Attributes without a value become true. */
 	public static function attrs( $tag ) {
 		$tag = preg_replace( '#^<[a-zA-Z][a-zA-Z0-9-]*#', '', $tag );
 		$tag = preg_replace( '#/?>$#', '', $tag );
@@ -77,14 +77,14 @@ class Html {
 				} elseif ( false !== strpos( $a[0], '=' ) ) {
 					$out[ $name ] = '';
 				} else {
-					$out[ $name ] = true; // Atributo sem valor (async, defer...).
+					$out[ $name ] = true; // Attribute without a value (async, defer...).
 				}
 			}
 		}
 		return $out;
 	}
 
-	/** Monta uma tag de abertura a partir dos atributos. */
+	/** Builds an opening tag from attributes. */
 	public static function tag( $name, array $attrs, $self_close = false ) {
 		$out = '<' . $name;
 		foreach ( $attrs as $k => $v ) {
@@ -96,19 +96,19 @@ class Html {
 		return $out . ( $self_close ? ' />' : '>' );
 	}
 
-	/** Valor do atributo já decodificado (&amp; vira &). */
+	/** Decoded attribute value (&amp; becomes &). */
 	public static function decoded( array $attrs, $name ) {
 		return isset( $attrs[ $name ] ) ? html_entity_decode( (string) $attrs[ $name ], ENT_QUOTES | ENT_HTML5, 'UTF-8' ) : '';
 	}
 
-	/** Insere código logo depois da abertura do <head>. */
+	/** Inserts code right after the opening <head>. */
 	public static function after_head_open( $html, $code ) {
 		if ( '' === $code ) {
 			return $html;
 		}
 		if ( preg_match( '#<head\b[^>]*>#i', $html, $m, PREG_OFFSET_CAPTURE ) ) {
 			$pos = $m[0][1] + strlen( $m[0][0] );
-			// Mantém o <meta charset> como primeira coisa do head.
+			// Keeps <meta charset> as the first thing in the head.
 			if ( preg_match( '#\G\s*<meta\s+charset=[^>]*>#i', $html, $c, 0, $pos ) ) {
 				$pos += strlen( $c[0] );
 			}
@@ -117,7 +117,7 @@ class Html {
 		return $code . $html;
 	}
 
-	/** Insere código antes do fechamento do </head>. */
+	/** Inserts code before the closing </head>. */
 	public static function before_head_close( $html, $code ) {
 		if ( '' === $code ) {
 			return $html;
@@ -126,7 +126,7 @@ class Html {
 		return false === $pos ? $code . $html : substr( $html, 0, $pos ) . $code . substr( $html, $pos );
 	}
 
-	/** Insere código antes do último </body>. */
+	/** Inserts code before the last </body>. */
 	public static function before_body_close( $html, $code ) {
 		if ( '' === $code ) {
 			return $html;
@@ -135,7 +135,7 @@ class Html {
 		return false === $pos ? $html . $code : substr( $html, 0, $pos ) . $code . substr( $html, $pos );
 	}
 
-	/** True quando o texto parece uma página HTML completa. */
+	/** True when the text looks like a complete HTML page. */
 	public static function is_page( $html ) {
 		return strlen( $html ) > 255
 			&& false !== stripos( $html, '<html' )

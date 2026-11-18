@@ -1,6 +1,6 @@
 <?php
 /**
- * Tela de opções, avisos, barra de administração e ações dos botões.
+ * Settings screen, notices, admin bar and button actions.
  *
  * @package FastWP
  */
@@ -13,26 +13,26 @@ class Admin {
 
 	const PAGE = 'fast-wp';
 
-	/** Plugins que fazem o mesmo trabalho e entram em conflito. */
+	/** Plugins that do the same job and conflict with Fast WP. */
 	const CONFLICTS = array(
-		'wp-fastest-cache/wpFastestCache.php'           => 'WP Fastest Cache',
-		'wp-rocket/wp-rocket.php'                       => 'WP Rocket',
-		'litespeed-cache/litespeed-cache.php'           => 'LiteSpeed Cache',
-		'w3-total-cache/w3-total-cache.php'             => 'W3 Total Cache',
-		'wp-super-cache/wp-cache.php'                   => 'WP Super Cache',
-		'autoptimize/autoptimize.php'                   => 'Autoptimize',
-		'perfmatters/perfmatters.php'                   => 'Perfmatters',
-		'wp-optimize/wp-optimize.php'                   => 'WP-Optimize',
-		'sg-cachepress/sg-cachepress.php'               => 'Speed Optimizer (SiteGround)',
-		'breeze/breeze.php'                             => 'Breeze',
-		'hummingbird-performance/wp-hummingbird.php'    => 'Hummingbird',
-		'cache-enabler/cache-enabler.php'               => 'Cache Enabler',
-		'flying-press/flying-press.php'                 => 'FlyingPress',
-		'easy-optimizer/easy-optimizer.php'             => 'Easy Optimizer',
-		'speedycache/speedycache.php'                   => 'SpeedyCache',
-		'nitropack/main.php'                            => 'NitroPack',
-		'jetpack-boost/jetpack-boost.php'               => 'Jetpack Boost',
-		'swift-performance-lite/performance.php'        => 'Swift Performance',
+		'wp-fastest-cache/wpFastestCache.php'        => 'WP Fastest Cache',
+		'wp-rocket/wp-rocket.php'                    => 'WP Rocket',
+		'litespeed-cache/litespeed-cache.php'        => 'LiteSpeed Cache',
+		'w3-total-cache/w3-total-cache.php'          => 'W3 Total Cache',
+		'wp-super-cache/wp-cache.php'                => 'WP Super Cache',
+		'autoptimize/autoptimize.php'                => 'Autoptimize',
+		'perfmatters/perfmatters.php'                => 'Perfmatters',
+		'wp-optimize/wp-optimize.php'                => 'WP-Optimize',
+		'sg-cachepress/sg-cachepress.php'            => 'Speed Optimizer (SiteGround)',
+		'breeze/breeze.php'                          => 'Breeze',
+		'hummingbird-performance/wp-hummingbird.php' => 'Hummingbird',
+		'cache-enabler/cache-enabler.php'            => 'Cache Enabler',
+		'flying-press/flying-press.php'              => 'FlyingPress',
+		'easy-optimizer/easy-optimizer.php'          => 'Easy Optimizer',
+		'speedycache/speedycache.php'                => 'SpeedyCache',
+		'nitropack/main.php'                         => 'NitroPack',
+		'jetpack-boost/jetpack-boost.php'            => 'Jetpack Boost',
+		'swift-performance-lite/performance.php'     => 'Swift Performance',
 	);
 
 	public static function init() {
@@ -48,11 +48,11 @@ class Admin {
 	}
 
 	public static function action_links( $links ) {
-		array_unshift( $links, '<a href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ) . '">Configurações</a>' );
+		array_unshift( $links, '<a href="' . esc_url( admin_url( 'admin.php?page=' . self::PAGE ) ) . '">' . esc_html( t( 'Settings' ) ) . '</a>' );
 		return $links;
 	}
 
-	/** URL de uma ação (botão) com nonce. */
+	/** URL of an action (button) with a nonce. */
 	public static function action_url( $do, array $extra = array() ) {
 		$args = array_merge(
 			array(
@@ -76,12 +76,12 @@ class Admin {
 	}
 
 	/* ---------------------------------------------------------------------
-	 * Ações
+	 * Actions
 	 * ------------------------------------------------------------------- */
 
 	public static function handle() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( 'Sem permissão.' );
+			wp_die( esc_html( t( 'You are not allowed to do this.' ) ) );
 		}
 		$do = isset( $_REQUEST['do'] ) ? sanitize_key( wp_unslash( $_REQUEST['do'] ) ) : '';
 		check_admin_referer( 'fast_wp_' . $do );
@@ -91,10 +91,10 @@ class Admin {
 		switch ( $do ) {
 			case 'save':
 				$tab = isset( $_POST['tab'] ) ? sanitize_key( wp_unslash( $_POST['tab'] ) ) : '';
-				$in  = isset( $_POST['fwp'] ) && is_array( $_POST['fwp'] ) ? $_POST['fwp'] : array(); // phpcs:ignore -- limpo em sanitize_tab.
+				$in  = isset( $_POST['fwp'] ) && is_array( $_POST['fwp'] ) ? $_POST['fwp'] : array(); // phpcs:ignore -- sanitized in sanitize_tab.
 				Settings::update( Settings::sanitize_tab( $tab, $in ) );
 				Plugin::apply_settings();
-				$msg = 'Opções salvas e cache limpo.';
+				$msg = t( 'Settings saved and cache cleared.' );
 				break;
 			case 'preset':
 				$name    = isset( $_GET['preset'] ) ? sanitize_key( wp_unslash( $_GET['preset'] ) ) : '';
@@ -102,62 +102,62 @@ class Admin {
 				if ( isset( $presets[ $name ] ) ) {
 					Settings::update( $presets[ $name ]['values'] );
 					Plugin::apply_settings();
-					$msg = 'Predefinição "' . $presets[ $name ]['label'] . '" aplicada.';
+					$msg = t( 'Preset "%s" applied.', $presets[ $name ]['label'] );
 				}
 				break;
 			case 'test_mode':
 				$on = ! empty( $_GET['on'] );
 				Settings::update( array( 'test_mode' => $on ? 1 : 0 ) );
 				Plugin::apply_settings();
-				$msg = $on ? 'Modo de teste ligado: visitantes não recebem as otimizações.' : 'Modo de teste desligado: as otimizações estão valendo para os visitantes.';
+				$msg = $on ? t( 'Test mode on: visitors do not get the optimizations.' ) : t( 'Test mode off: optimizations are live for visitors.' );
 				break;
 			case 'safe_mode_off':
 				Settings::update( array( 'safe_mode' => 0 ) );
 				Plugin::apply_settings();
-				$msg = 'Modo de segurança desligado.';
+				$msg = t( 'Safe mode turned off.' );
 				break;
 			case 'purge':
 				Cache::purge_all();
-				$msg = 'Cache limpo.';
+				$msg = t( 'Cache cleared.' );
 				break;
 			case 'purge_everything':
 				Cache::purge_everything();
-				$msg = 'Cache e arquivos otimizados apagados.';
+				$msg = t( 'Cache and optimized files deleted.' );
 				break;
 			case 'purge_url':
 				$url = isset( $_GET['url'] ) ? esc_url_raw( wp_unslash( $_GET['url'] ) ) : '';
 				if ( $url ) {
 					Cache::purge_url( $url );
-					$msg = 'Cache desta página limpo.';
+					$msg = t( 'Cache of this page cleared.' );
 				}
 				break;
 			case 'preload':
 				Cache::schedule_preload( 1 );
 				spawn_cron();
-				$msg = 'Pré-carregamento iniciado em segundo plano.';
+				$msg = t( 'Preloading started in the background.' );
 				break;
 			case 'self_test':
 				$r    = Self_Test::run();
-				$msg  = $r['ok'] ? 'Autoteste OK: o site respondeu normalmente.' : 'O autoteste encontrou um problema. Veja os detalhes no Painel.';
+				$msg  = $r['ok'] ? t( 'Self-test OK: the site responded normally.' ) : t( 'The self-test found a problem. See the details on the Dashboard tab.' );
 				$type = $r['ok'] ? 'success' : 'error';
 				break;
 			case 'db_clean':
 				$done = Database::clean();
-				$msg  = 'Banco limpo: ' . array_sum( $done ) . ' itens removidos e tabelas otimizadas.';
+				$msg  = t( 'Database cleaned: %d items removed and tables optimized.', array_sum( $done ) );
 				break;
 			case 'webp_bulk':
 				Webp::start_bulk();
 				spawn_cron();
-				$msg = 'Conversão das imagens para WebP iniciada em segundo plano.';
+				$msg = t( 'WebP conversion started in the background.' );
 				break;
 			case 'dropin_force':
 				Cache::install_dropin( true );
-				$msg = 'advanced-cache.php substituído pelo do Fast WP.';
+				$msg = t( 'advanced-cache.php replaced with the Fast WP one.' );
 				break;
 			case 'check_update':
 				$rel = Updater::latest( true );
 				delete_site_transient( 'update_plugins' );
-				$msg = $rel ? 'Versão mais recente no GitHub: ' . $rel['version'] . '.' : 'Não foi possível consultar o GitHub (confira o repositório na aba Avançado).';
+				$msg = $rel ? t( 'Latest version on GitHub: %s.', $rel['version'] ) : t( 'Could not reach GitHub (check the repository in the Advanced tab).' );
 				break;
 			case 'export':
 				nocache_headers();
@@ -173,14 +173,14 @@ class Admin {
 				if ( is_array( $data ) ) {
 					$clean = array();
 					foreach ( array_keys( Settings::fields() ) as $tab ) {
-						$clean = array_merge( $clean, Settings::sanitize_tab( $tab, self::slash_deep( $data ) ) );
+						$clean = array_merge( $clean, Settings::sanitize_tab( $tab, wp_slash( $data ) ) );
 					}
-					$clean['test_mode'] = 1; // Importou: começa em modo de teste por segurança.
+					$clean['test_mode'] = 1; // Imported: start in test mode to be safe.
 					Settings::update( $clean );
 					Plugin::apply_settings();
-					$msg = 'Configurações importadas. O modo de teste foi ligado: teste antes de liberar para os visitantes.';
+					$msg = t( 'Settings imported. Test mode was turned on: test before going live.' );
 				} else {
-					$msg  = 'O texto colado não é uma configuração válida do Fast WP.';
+					$msg  = t( 'The pasted text is not a valid Fast WP configuration.' );
 					$type = 'error';
 				}
 				break;
@@ -197,13 +197,8 @@ class Admin {
 		exit;
 	}
 
-	/** sanitize_tab espera dados com barras (como vêm do $_POST). */
-	private static function slash_deep( array $data ) {
-		return wp_slash( $data );
-	}
-
 	/* ---------------------------------------------------------------------
-	 * Avisos
+	 * Notices
 	 * ------------------------------------------------------------------- */
 
 	public static function notices() {
@@ -220,43 +215,67 @@ class Admin {
 		if ( ! empty( $s['safe_mode'] ) ) {
 			$test = get_option( Self_Test::OPTION );
 			printf(
-				'<div class="notice notice-error"><p><strong>Fast WP em modo de segurança:</strong> o autoteste encontrou um problema depois de uma atualização e as otimizações foram desligadas (o cache continua). %s <a href="%s">Rodar o autoteste de novo</a> · <a href="%s">Desligar o modo de segurança</a></p></div>',
+				'<div class="notice notice-error"><p><strong>%s</strong> %s %s <a href="%s">%s</a> · <a href="%s">%s</a></p></div>',
+				esc_html( t( 'Fast WP is in safe mode:' ) ),
+				esc_html( t( 'the self-test found a problem after an update and the optimizations were switched off (the cache keeps working).' ) ),
 				$test && ! empty( $test['checks'] ) ? esc_html( self::test_summary( $test ) ) : '',
 				esc_url( self::action_url( 'self_test' ) ),
-				esc_url( self::action_url( 'safe_mode_off' ) )
+				esc_html( t( 'Run the self-test again' ) ),
+				esc_url( self::action_url( 'safe_mode_off' ) ),
+				esc_html( t( 'Turn safe mode off' ) )
 			);
 		} elseif ( ! empty( $s['test_mode'] ) ) {
+			$preview = add_query_arg( 'fwp_test', 1, home_url( '/' ) );
 			printf(
-				'<div class="notice notice-warning"><p><strong>Fast WP em modo de teste:</strong> visitantes ainda não recebem as otimizações. Veja o resultado em <a href="%s" target="_blank">%s</a> ou <a href="%s" target="_blank">teste no PageSpeed</a>. Quando estiver tudo certo: <a href="%s"><strong>liberar para os visitantes</strong></a>.</p></div>',
-				esc_url( add_query_arg( 'fwp_test', 1, home_url( '/' ) ) ),
-				esc_html( add_query_arg( 'fwp_test', 1, home_url( '/' ) ) ),
+				'<div class="notice notice-warning"><p><strong>%s</strong> %s <a href="%s" target="_blank">%s</a> · <a href="%s" target="_blank">%s</a> · <a href="%s"><strong>%s</strong></a></p></div>',
+				esc_html( t( 'Fast WP is in test mode:' ) ),
+				esc_html( t( 'visitors do not get the optimizations yet. Preview:' ) ),
+				esc_url( $preview ),
+				esc_html( $preview ),
 				esc_url( self::pagespeed_url( home_url( '/' ) ) ),
-				esc_url( self::action_url( 'test_mode', array( 'on' => 0 ) ) )
+				esc_html( t( 'test on PageSpeed' ) ),
+				esc_url( self::action_url( 'test_mode', array( 'on' => 0 ) ) ),
+				esc_html( t( 'go live for visitors' ) )
 			);
 		}
 
 		$conflicts = self::conflicts();
 		if ( $conflicts ) {
-			printf( '<div class="notice notice-error"><p><strong>Fast WP:</strong> desative %s. Dois plugins de cache/otimização ao mesmo tempo causam conflito.</p></div>', esc_html( implode( ', ', $conflicts ) ) );
+			printf( '<div class="notice notice-error"><p><strong>Fast WP:</strong> %s</p></div>', esc_html( t( 'deactivate %s. Two cache/optimization plugins at the same time conflict.', implode( ', ', $conflicts ) ) ) );
 		}
 		if ( ! empty( $s['cache_enabled'] ) && Cache::foreign_dropin() ) {
-			printf( '<div class="notice notice-warning"><p><strong>Fast WP:</strong> existe um arquivo advanced-cache.php de outro plugin. Depois de desativar o outro plugin de cache, <a href="%s">use o do Fast WP</a>.</p></div>', esc_url( self::action_url( 'dropin_force' ) ) );
+			printf(
+				'<div class="notice notice-warning"><p><strong>Fast WP:</strong> %s <a href="%s">%s</a></p></div>',
+				esc_html( t( 'there is an advanced-cache.php file from another plugin. After deactivating the other cache plugin,' ) ),
+				esc_url( self::action_url( 'dropin_force' ) ),
+				esc_html( t( 'use the Fast WP one' ) )
+			);
 		}
 		if ( ! empty( $s['cache_enabled'] ) && ! Cache::wp_cache_active() && ! Cache::foreign_dropin() ) {
-			echo '<div class="notice notice-warning"><p><strong>Fast WP:</strong> não consegui ativar o cache no wp-config.php (arquivo sem permissão de escrita). Adicione esta linha logo depois de <code>&lt;?php</code>: <code>define( \'WP_CACHE\', true );</code></p></div>';
+			printf(
+				'<div class="notice notice-warning"><p><strong>Fast WP:</strong> %s <code>define( \'WP_CACHE\', true );</code></p></div>',
+				esc_html( t( 'could not enable the cache in wp-config.php (file not writable). Add this line right after <?php:' ) )
+			);
 		}
 		$err = get_option( Optimizer::ERROR_OPTION );
 		if ( $err && ! empty( $err['time'] ) && $err['time'] > time() - DAY_IN_SECONDS && isset( $_GET['page'] ) && self::PAGE === $_GET['page'] ) { // phpcs:ignore
-			printf( '<div class="notice notice-info"><p><strong>Fast WP:</strong> uma otimização falhou em %s e a página foi entregue sem otimizar (o site não quebrou). Detalhe: %s</p></div>', esc_html( $err['url'] ), esc_html( $err['message'] ) );
+			printf(
+				'<div class="notice notice-info"><p><strong>Fast WP:</strong> %s</p></div>',
+				esc_html( t( 'an optimization failed on %1$s and the page was served without optimization (the site did not break). Details: %2$s', $err['url'], $err['message'] ) )
+			);
 		}
 	}
 
 	private static function test_summary( array $test ) {
 		$out = array();
 		foreach ( $test['checks'] as $name => $c ) {
-			$out[] = ucfirst( $name ) . ': ' . $c['message'];
+			$out[] = self::check_label( $name ) . ': ' . $c['message'];
 		}
 		return implode( ' | ', $out );
+	}
+
+	private static function check_label( $name ) {
+		return 'optimized' === $name ? t( 'Optimized' ) : t( 'Normal' );
 	}
 
 	public static function pagespeed_url( $url ) {
@@ -267,7 +286,7 @@ class Admin {
 	}
 
 	/* ---------------------------------------------------------------------
-	 * Barra de administração
+	 * Admin bar
 	 * ------------------------------------------------------------------- */
 
 	public static function admin_bar( $bar ) {
@@ -275,11 +294,11 @@ class Admin {
 			return;
 		}
 		$s     = Settings::all();
-		$title = 'Fast WP' . ( ! empty( $s['safe_mode'] ) ? ' (segurança)' : ( ! empty( $s['test_mode'] ) ? ' (teste)' : '' ) );
+		$title = 'Fast WP' . ( ! empty( $s['safe_mode'] ) ? ' (' . t( 'safe mode' ) . ')' : ( ! empty( $s['test_mode'] ) ? ' (' . t( 'test' ) . ')' : '' ) );
 		$bar->add_node(
 			array(
 				'id'    => 'fast-wp',
-				'title' => $title,
+				'title' => esc_html( $title ),
 				'href'  => admin_url( 'admin.php?page=' . self::PAGE ),
 			)
 		);
@@ -287,7 +306,7 @@ class Admin {
 			array(
 				'parent' => 'fast-wp',
 				'id'     => 'fast-wp-purge',
-				'title'  => 'Limpar todo o cache',
+				'title'  => esc_html( t( 'Clear the whole cache' ) ),
 				'href'   => self::action_url( 'purge' ),
 			)
 		);
@@ -296,44 +315,28 @@ class Admin {
 			$uri     = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
 			$current = ( is_ssl() ? 'https://' : 'http://' ) . $host . $uri;
 			$current = remove_query_arg( array( 'fwp_test', 'fwp_off' ), $current );
-			$bar->add_node(
-				array(
-					'parent' => 'fast-wp',
-					'id'     => 'fast-wp-purge-url',
-					'title'  => 'Limpar cache desta página',
-					'href'   => self::action_url( 'purge_url', array( 'url' => rawurlencode( $current ), 'back' => rawurlencode( $current ) ) ),
-				)
+			$items   = array(
+				'fast-wp-purge-url' => array( t( 'Clear the cache of this page' ), self::action_url( 'purge_url', array( 'url' => rawurlencode( $current ), 'back' => rawurlencode( $current ) ) ), false ),
+				'fast-wp-view-opt'  => array( t( 'View this page optimized' ), add_query_arg( 'fwp_test', 1, $current ), false ),
+				'fast-wp-view-off'  => array( t( 'View this page without optimization' ), add_query_arg( 'fwp_off', 1, $current ), false ),
+				'fast-wp-psi'       => array( t( 'Test this page on PageSpeed' ), self::pagespeed_url( $current ), true ),
 			);
-			$bar->add_node(
-				array(
-					'parent' => 'fast-wp',
-					'id'     => 'fast-wp-view-opt',
-					'title'  => 'Ver esta página otimizada',
-					'href'   => add_query_arg( 'fwp_test', 1, $current ),
-				)
-			);
-			$bar->add_node(
-				array(
-					'parent' => 'fast-wp',
-					'id'     => 'fast-wp-view-off',
-					'title'  => 'Ver esta página sem otimização',
-					'href'   => add_query_arg( 'fwp_off', 1, $current ),
-				)
-			);
-			$bar->add_node(
-				array(
-					'parent' => 'fast-wp',
-					'id'     => 'fast-wp-psi',
-					'title'  => 'Testar esta página no PageSpeed',
-					'href'   => self::pagespeed_url( $current ),
-					'meta'   => array( 'target' => '_blank' ),
-				)
-			);
+			foreach ( $items as $id => $item ) {
+				$bar->add_node(
+					array(
+						'parent' => 'fast-wp',
+						'id'     => $id,
+						'title'  => esc_html( $item[0] ),
+						'href'   => $item[1],
+						'meta'   => $item[2] ? array( 'target' => '_blank' ) : array(),
+					)
+				);
+			}
 		}
 	}
 
 	/* ---------------------------------------------------------------------
-	 * Tela
+	 * Screen
 	 * ------------------------------------------------------------------- */
 
 	public static function render() {
@@ -345,10 +348,10 @@ class Admin {
 		if ( 'painel' !== $tab && ! isset( $fields[ $tab ] ) ) {
 			$tab = 'painel';
 		}
-		echo '<div class="wrap fwp-wrap"><h1>Fast WP <small style="font-size:13px;color:#666">versão ' . esc_html( FAST_WP_VERSION ) . '</small></h1>';
+		echo '<div class="wrap fwp-wrap"><h1>Fast WP <small style="font-size:13px;color:#666">' . esc_html( t( 'version %s', FAST_WP_VERSION ) ) . '</small></h1>';
 		self::styles();
 		echo '<nav class="nav-tab-wrapper">';
-		$tabs = array_merge( array( 'painel' => 'Painel' ), wp_list_pluck( $fields, 'title' ) );
+		$tabs = array_merge( array( 'painel' => t( 'Dashboard' ) ), wp_list_pluck( $fields, 'title' ) );
 		foreach ( $tabs as $key => $label ) {
 			printf(
 				'<a href="%s" class="nav-tab%s">%s</a>',
@@ -379,55 +382,69 @@ class Admin {
 	private static function render_dashboard() {
 		$s = Settings::all();
 
-		echo '<div class="fwp-box"><h2>Situação</h2><div class="fwp-grid">';
+		echo '<div class="fwp-box"><h2>' . esc_html( t( 'Status' ) ) . '</h2><div class="fwp-grid">';
 		if ( ! empty( $s['safe_mode'] ) ) {
-			self::status_line( 'Modo', 'bad', 'segurança (otimizações desligadas)' );
+			self::status_line( t( 'Mode' ), 'bad', t( 'safe mode (optimizations off)' ) );
 		} elseif ( ! empty( $s['test_mode'] ) ) {
-			self::status_line( 'Modo', 'warn', 'teste (só com ?fwp_test=1)' );
+			self::status_line( t( 'Mode' ), 'warn', t( 'test (only with ?fwp_test=1)' ) );
 		} else {
-			self::status_line( 'Modo', 'ok', 'ativo para os visitantes' );
+			self::status_line( t( 'Mode' ), 'ok', t( 'live for visitors' ) );
 		}
-		self::status_line( 'Cache de página', ! empty( $s['cache_enabled'] ) ? 'ok' : 'warn', ! empty( $s['cache_enabled'] ) ? 'ligado' : 'desligado' );
-		self::status_line( 'WP_CACHE no wp-config', Cache::wp_cache_active() ? 'ok' : 'bad', Cache::wp_cache_active() ? 'ativo' : 'inativo' );
-		self::status_line( 'advanced-cache.php', Cache::foreign_dropin() ? 'bad' : ( is_file( Cache::dropin_path() ) ? 'ok' : 'warn' ), Cache::foreign_dropin() ? 'de outro plugin' : ( is_file( Cache::dropin_path() ) ? 'do Fast WP' : 'ausente' ) );
-		self::status_line( 'Servidor', 'ok', Htaccess::is_apache() ? 'Apache/LiteSpeed (cache servido pelo .htaccess)' : 'outro (cache servido pelo PHP)' );
-		self::status_line( 'Páginas em cache', 'ok', (string) self::count_cached() );
-		self::status_line( 'WebP no servidor', Webp::supported() ? 'ok' : 'warn', Webp::supported() ? 'suportado' : 'não suportado' );
+		self::status_line( t( 'Page cache' ), ! empty( $s['cache_enabled'] ) ? 'ok' : 'warn', ! empty( $s['cache_enabled'] ) ? t( 'on' ) : t( 'off' ) );
+		self::status_line( t( 'WP_CACHE in wp-config' ), Cache::wp_cache_active() ? 'ok' : 'bad', Cache::wp_cache_active() ? t( 'active' ) : t( 'inactive' ) );
+		$dropin_state = Cache::foreign_dropin() ? 'bad' : ( is_file( Cache::dropin_path() ) ? 'ok' : 'warn' );
+		$dropin_text  = Cache::foreign_dropin() ? t( 'from another plugin' ) : ( is_file( Cache::dropin_path() ) ? t( 'from Fast WP' ) : t( 'missing' ) );
+		self::status_line( 'advanced-cache.php', $dropin_state, $dropin_text );
+		self::status_line( t( 'Server' ), 'ok', Htaccess::is_apache() ? t( 'Apache/LiteSpeed (cache served by .htaccess)' ) : t( 'other (cache served by PHP)' ) );
+		self::status_line( t( 'Cached pages' ), 'ok', (string) self::count_cached() );
+		self::status_line( t( 'WebP on the server' ), Webp::supported() ? 'ok' : 'warn', Webp::supported() ? t( 'supported' ) : t( 'not supported' ) );
 		$conf = self::conflicts();
-		self::status_line( 'Conflitos', $conf ? 'bad' : 'ok', $conf ? implode( ', ', $conf ) : 'nenhum' );
+		self::status_line( t( 'Conflicts' ), $conf ? 'bad' : 'ok', $conf ? implode( ', ', $conf ) : t( 'none' ) );
 		echo '</div></div>';
 
-		echo '<div class="fwp-box fwp-btns"><h2>Ações</h2>';
-		printf( '<a class="button button-primary" href="%s">Limpar todo o cache</a>', esc_url( self::action_url( 'purge' ) ) );
-		printf( '<a class="button" href="%s">Pré-carregar o cache agora</a>', esc_url( self::action_url( 'preload' ) ) );
-		printf( '<a class="button" href="%s">Rodar autoteste</a>', esc_url( self::action_url( 'self_test' ) ) );
-		printf( '<a class="button" target="_blank" href="%s">Testar no PageSpeed (celular)</a>', esc_url( self::pagespeed_url( home_url( '/' ) ) ) );
+		echo '<div class="fwp-box fwp-btns"><h2>' . esc_html( t( 'Actions' ) ) . '</h2>';
+		printf( '<a class="button button-primary" href="%s">%s</a>', esc_url( self::action_url( 'purge' ) ), esc_html( t( 'Clear the whole cache' ) ) );
+		printf( '<a class="button" href="%s">%s</a>', esc_url( self::action_url( 'preload' ) ), esc_html( t( 'Preload the cache now' ) ) );
+		printf( '<a class="button" href="%s">%s</a>', esc_url( self::action_url( 'self_test' ) ), esc_html( t( 'Run self-test' ) ) );
+		printf( '<a class="button" target="_blank" href="%s">%s</a>', esc_url( self::pagespeed_url( home_url( '/' ) ) ), esc_html( t( 'Test on PageSpeed (mobile)' ) ) );
 		if ( ! empty( $s['test_mode'] ) ) {
-			printf( '<a class="button button-primary" href="%s">Liberar otimizações para os visitantes</a>', esc_url( self::action_url( 'test_mode', array( 'on' => 0 ) ) ) );
+			printf( '<a class="button button-primary" href="%s">%s</a>', esc_url( self::action_url( 'test_mode', array( 'on' => 0 ) ) ), esc_html( t( 'Go live for visitors' ) ) );
 		} else {
-			printf( '<a class="button" href="%s">Voltar para o modo de teste</a>', esc_url( self::action_url( 'test_mode', array( 'on' => 1 ) ) ) );
+			printf( '<a class="button" href="%s">%s</a>', esc_url( self::action_url( 'test_mode', array( 'on' => 1 ) ) ), esc_html( t( 'Back to test mode' ) ) );
 		}
-		echo '<p class="description">No modo de teste, só quem abre o site com <code>?fwp_test=1</code> no fim do endereço vê a versão otimizada. O link do PageSpeed acima já inclui isso. Para comparar, <code>?fwp_off=1</code> mostra a página sem nenhuma otimização.</p>';
+		echo '<p class="description">' . esc_html( t( 'In test mode, only visitors who add ?fwp_test=1 to the address see the optimized version. The PageSpeed link above already includes it. To compare, ?fwp_off=1 shows the page without any optimization.' ) ) . '</p>';
 		echo '</div>';
 
-		echo '<div class="fwp-box fwp-btns"><h2>Predefinições</h2>';
+		echo '<div class="fwp-box fwp-btns"><h2>' . esc_html( t( 'Presets' ) ) . '</h2>';
 		foreach ( Settings::presets() as $key => $p ) {
-			printf( '<a class="button" href="%s" onclick="return confirm(\'Aplicar a predefinição %s?\')">%s</a>', esc_url( self::action_url( 'preset', array( 'preset' => $key ) ) ), esc_js( $p['label'] ), esc_html( $p['label'] ) );
+			printf(
+				'<a class="button" href="%s" onclick="return confirm(%s)">%s</a>',
+				esc_url( self::action_url( 'preset', array( 'preset' => $key ) ) ),
+				esc_attr( wp_json_encode( t( 'Apply the "%s" preset?', $p['label'] ) ) ),
+				esc_html( $p['label'] )
+			);
 		}
-		echo '<p class="description"><strong>Seguro:</strong> cache, minificação, lazy load e fontes, sem atrasar JS nem remover CSS. <strong>Recomendado:</strong> tudo, menos atrasar pixels de anúncio. <strong>Máximo:</strong> tudo, inclusive pixels e GTM (o rastreio só começa depois da primeira interação).</p>';
+		echo '<p class="description">' . esc_html( t( 'Safe: cache, minification, lazy load and fonts, without delaying JS or removing CSS. Recommended: everything except delaying ad pixels. Maximum: everything, including pixels and GTM (tracking only starts after the first interaction).' ) ) . '</p>';
 		echo '</div>';
 
 		$test = get_option( Self_Test::OPTION );
 		if ( $test && ! empty( $test['checks'] ) ) {
-			echo '<div class="fwp-box"><h2>Último autoteste</h2>';
-			printf( '<p>%s em %s</p><ul>', $test['ok'] ? '<span class="fwp-ok">Tudo certo</span>' : '<span class="fwp-bad">Problema encontrado</span>', esc_html( wp_date( 'd/m/Y H:i', $test['time'] ) ) );
+			echo '<div class="fwp-box"><h2>' . esc_html( t( 'Last self-test' ) ) . '</h2>';
+			printf(
+				'<p>%s · %s</p><ul>',
+				$test['ok'] ? '<span class="fwp-ok">' . esc_html( t( 'All good' ) ) . '</span>' : '<span class="fwp-bad">' . esc_html( t( 'Problem found' ) ) . '</span>',
+				esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $test['time'] ) )
+			);
 			foreach ( $test['checks'] as $name => $c ) {
-				printf( '<li><strong>%s:</strong> %s</li>', esc_html( ucfirst( $name ) ), esc_html( $c['message'] ) );
+				printf( '<li><strong>%s:</strong> %s</li>', esc_html( self::check_label( $name ) ), esc_html( $c['message'] ) );
 			}
 			echo '</ul></div>';
 		}
 
-		echo '<div class="fwp-box"><h2>Emergência</h2><p>Se o site quebrar e você não conseguir entrar no painel, adicione no <code>wp-config.php</code>:</p><p><code>define( \'FAST_WP_DISABLE\', true );</code></p><p>Isso desliga o cache e todas as otimizações na hora. Desativar o plugin também desfaz tudo: remove as regras do .htaccess, o advanced-cache.php e a linha do wp-config.php.</p></div>';
+		echo '<div class="fwp-box"><h2>' . esc_html( t( 'Emergency' ) ) . '</h2>';
+		echo '<p>' . esc_html( t( 'If the site breaks and you cannot open the dashboard, add this to wp-config.php:' ) ) . '</p>';
+		echo '<p><code>define( \'FAST_WP_DISABLE\', true );</code></p>';
+		echo '<p>' . esc_html( t( 'This switches the cache and every optimization off immediately. Deactivating the plugin also undoes everything: it removes the .htaccess rules, advanced-cache.php and the wp-config.php line.' ) ) . '</p></div>';
 	}
 
 	private static function count_cached() {
@@ -459,7 +476,7 @@ class Admin {
 			echo '<tr><th scope="row"><label for="fwp-' . esc_attr( $key ) . '">' . esc_html( $label ) . '</label></th><td>';
 			switch ( $type ) {
 				case 'checkbox':
-					printf( '<label><input type="checkbox" id="fwp-%1$s" name="%2$s" value="1"%3$s> Ativar</label>', esc_attr( $key ), esc_attr( $name ), checked( ! empty( $val ), true, false ) );
+					printf( '<label><input type="checkbox" id="fwp-%1$s" name="%2$s" value="1"%3$s> %4$s</label>', esc_attr( $key ), esc_attr( $name ), checked( ! empty( $val ), true, false ), esc_html( t( 'On' ) ) );
 					break;
 				case 'number':
 					printf( '<input type="number" min="0" class="small-text" id="fwp-%1$s" name="%2$s" value="%3$s">', esc_attr( $key ), esc_attr( $name ), esc_attr( (string) $val ) );
@@ -483,7 +500,7 @@ class Admin {
 			echo '</td></tr>';
 		}
 		echo '</table>';
-		submit_button( 'Salvar e limpar o cache' );
+		submit_button( t( 'Save and clear the cache' ) );
 		echo '</div></form>';
 
 		if ( 'midia' === $tab ) {
@@ -496,52 +513,64 @@ class Admin {
 	}
 
 	private static function render_webp_box() {
-		echo '<div class="fwp-box fwp-btns"><h2>Converter imagens que já existem</h2>';
+		echo '<div class="fwp-box fwp-btns"><h2>' . esc_html( t( 'Convert existing images' ) ) . '</h2>';
 		if ( ! Webp::supported() ) {
-			echo '<p class="fwp-bad">Este servidor não tem suporte a WebP no PHP (GD ou Imagick). Peça à hospedagem para ativar.</p></div>';
+			echo '<p class="fwp-bad">' . esc_html( t( 'This server has no WebP support in PHP (GD or Imagick). Ask your host to enable it.' ) ) . '</p></div>';
 			return;
 		}
 		$state = get_option( Webp::BULK_OPTION );
 		if ( $state ) {
-			printf( '<p>%s · imagens verificadas: %d · versões WebP criadas: %d</p>', ! empty( $state['running'] ) ? '<span class="fwp-warn">Em andamento</span>' : '<span class="fwp-ok">Concluído</span>', (int) $state['offset'], (int) $state['converted'] );
+			printf(
+				'<p>%s · %s</p>',
+				! empty( $state['running'] ) ? '<span class="fwp-warn">' . esc_html( t( 'Running' ) ) . '</span>' : '<span class="fwp-ok">' . esc_html( t( 'Finished' ) ) . '</span>',
+				esc_html( t( 'images checked: %1$d · WebP copies created: %2$d', (int) $state['offset'], (int) $state['converted'] ) )
+			);
 		}
-		printf( '<a class="button" href="%s">Converter todas as imagens da biblioteca</a>', esc_url( self::action_url( 'webp_bulk' ) ) );
-		echo '<p class="description">Roda em segundo plano, em lotes. Os arquivos originais não são alterados.</p></div>';
+		printf( '<a class="button" href="%s">%s</a>', esc_url( self::action_url( 'webp_bulk' ) ), esc_html( t( 'Convert every image in the library' ) ) );
+		echo '<p class="description">' . esc_html( t( 'Runs in the background, in batches. The original files are not changed.' ) ) . '</p></div>';
 	}
 
 	private static function render_db_box() {
-		echo '<div class="fwp-box fwp-btns"><h2>Limpar agora</h2><ul>';
+		echo '<div class="fwp-box fwp-btns"><h2>' . esc_html( t( 'Clean now' ) ) . '</h2><ul>';
 		$labels = Database::labels();
 		foreach ( Database::counts() as $k => $n ) {
 			printf( '<li>%s: <strong>%d</strong></li>', esc_html( $labels[ $k ] ), (int) $n );
 		}
 		echo '</ul>';
-		printf( '<a class="button button-primary" href="%s" onclick="return confirm(\'Os itens listados serão apagados de vez (não vão para a lixeira). Continuar?\')">Limpar o banco de dados</a>', esc_url( self::action_url( 'db_clean' ) ) );
-		echo '<p class="description">Os itens apagados não podem ser recuperados. Faça um backup antes se tiver dúvida.</p></div>';
+		printf(
+			'<a class="button button-primary" href="%s" onclick="return confirm(%s)">%s</a>',
+			esc_url( self::action_url( 'db_clean' ) ),
+			esc_attr( wp_json_encode( t( 'The items listed will be deleted permanently (they do not go to the trash). Continue?' ) ) ),
+			esc_html( t( 'Clean the database' ) )
+		);
+		echo '<p class="description">' . esc_html( t( 'Deleted items cannot be recovered. Make a backup first if in doubt.' ) ) . '</p></div>';
 	}
 
 	private static function render_advanced_box() {
 		$rel = Updater::repo() ? Updater::latest() : null;
-		echo '<div class="fwp-box fwp-btns"><h2>Atualizações</h2>';
+		echo '<div class="fwp-box fwp-btns"><h2>' . esc_html( t( 'Updates' ) ) . '</h2>';
 		if ( ! Updater::repo() ) {
-			echo '<p class="fwp-warn">Nenhum repositório do GitHub configurado. Preencha o campo acima para receber atualizações automáticas.</p>';
+			echo '<p class="fwp-warn">' . esc_html( t( 'No GitHub repository set. Fill in the field above to receive automatic updates.' ) ) . '</p>';
 		} else {
-			printf( '<p>Repositório: <code>%s</code> · versão instalada: <strong>%s</strong> · última no GitHub: <strong>%s</strong></p>', esc_html( Updater::repo() ), esc_html( FAST_WP_VERSION ), esc_html( $rel ? $rel['version'] : 'não consultada' ) );
+			printf(
+				'<p>%s</p>',
+				esc_html( t( 'Repository: %1$s · installed version: %2$s · latest on GitHub: %3$s', Updater::repo(), FAST_WP_VERSION, $rel ? $rel['version'] : t( 'not checked' ) ) )
+			);
 		}
-		printf( '<a class="button" href="%s">Verificar atualização agora</a>', esc_url( self::action_url( 'check_update' ) ) );
+		printf( '<a class="button" href="%s">%s</a>', esc_url( self::action_url( 'check_update' ) ), esc_html( t( 'Check for updates now' ) ) );
 		echo '</div>';
 
-		echo '<div class="fwp-box fwp-btns"><h2>Levar as configurações para outro site</h2>';
-		printf( '<a class="button" href="%s">Baixar configurações (.json)</a>', esc_url( self::action_url( 'export' ) ) );
+		echo '<div class="fwp-box fwp-btns"><h2>' . esc_html( t( 'Copy the settings to another site' ) ) . '</h2>';
+		printf( '<a class="button" href="%s">%s</a>', esc_url( self::action_url( 'export' ) ), esc_html( t( 'Download settings (.json)' ) ) );
 		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="margin-top:12px">';
 		wp_nonce_field( 'fast_wp_import' );
 		echo '<input type="hidden" name="action" value="fast_wp"><input type="hidden" name="do" value="import">';
-		echo '<textarea name="config" rows="5" class="large-text code" placeholder="Cole aqui o conteúdo do arquivo fast-wp-config.json"></textarea>';
-		submit_button( 'Importar', 'secondary', 'submit', false );
-		echo '<p class="description">Ao importar, o modo de teste é ligado no site de destino.</p></form></div>';
+		echo '<textarea name="config" rows="5" class="large-text code" placeholder="' . esc_attr( t( 'Paste the contents of fast-wp-config.json here' ) ) . '"></textarea>';
+		submit_button( t( 'Import' ), 'secondary', 'submit', false );
+		echo '<p class="description">' . esc_html( t( 'Importing turns test mode on in the destination site.' ) ) . '</p></form></div>';
 
-		echo '<div class="fwp-box fwp-btns"><h2>Apagar arquivos gerados</h2>';
-		printf( '<a class="button" href="%s">Apagar cache e arquivos otimizados</a>', esc_url( self::action_url( 'purge_everything' ) ) );
-		echo '<p class="description">Use se algo parecer desatualizado mesmo depois de limpar o cache. Tudo é gerado de novo nas próximas visitas.</p></div>';
+		echo '<div class="fwp-box fwp-btns"><h2>' . esc_html( t( 'Delete generated files' ) ) . '</h2>';
+		printf( '<a class="button" href="%s">%s</a>', esc_url( self::action_url( 'purge_everything' ) ), esc_html( t( 'Delete cache and optimized files' ) ) );
+		echo '<p class="description">' . esc_html( t( 'Use it if something looks outdated even after clearing the cache. Everything is generated again on the next visits.' ) ) . '</p></div>';
 	}
 }

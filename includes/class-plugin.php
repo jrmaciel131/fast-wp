@@ -1,6 +1,6 @@
 <?php
 /**
- * Liga tudo: ganchos do WordPress, ativação, desativação e tarefas agendadas.
+ * Wires everything up: WordPress hooks, activation, deactivation and scheduled tasks.
  *
  * @package FastWP
  */
@@ -20,7 +20,7 @@ class Plugin {
 
 		add_action( 'template_redirect', array( 'FastWP\\Cache', 'start' ), -9999 );
 
-		// Limpeza do cache.
+		// Cache purging.
 		add_action( 'transition_post_status', array( 'FastWP\\Cache', 'on_transition' ), 10, 3 );
 		add_action( 'deleted_post', array( 'FastWP\\Cache', 'on_post_change' ) );
 		add_action( 'comment_post', array( 'FastWP\\Cache', 'on_comment' ) );
@@ -30,14 +30,14 @@ class Plugin {
 		}
 		add_action( 'upgrader_process_complete', array( __CLASS__, 'purge_all_once' ) );
 
-		// Tarefas agendadas.
+		// Scheduled tasks.
 		add_action( 'fast_wp_preload', array( 'FastWP\\Cache', 'run_preload' ) );
 		add_action( 'fast_wp_hourly', array( 'FastWP\\Cache', 'cleanup_expired' ) );
 		add_action( 'fast_wp_db_weekly', array( __CLASS__, 'db_weekly' ) );
 		add_filter( 'cron_schedules', array( __CLASS__, 'cron_schedules' ) );
 
 		if ( wp_doing_cron() ) {
-			// Atualização automática acontece pelo WP-Cron: o autoteste roda na próxima execução.
+			// Auto-updates run through WP-Cron: the self-test runs on the next run.
 			add_action( 'init', array( __CLASS__, 'maybe_upgraded' ), 99 );
 		}
 		if ( is_admin() ) {
@@ -48,7 +48,7 @@ class Plugin {
 		}
 	}
 
-	/** Evita limpar o cache várias vezes na mesma requisição. */
+	/** Avoids purging the cache several times in the same request. */
 	public static function purge_all_once() {
 		static $done = false;
 		if ( $done ) {
@@ -72,7 +72,7 @@ class Plugin {
 		}
 	}
 
-	/** Na primeira execução depois de uma atualização: reinstala arquivos e roda o autoteste. */
+	/** On the first run after an update: reinstall files and run the self-test. */
 	public static function maybe_upgraded() {
 		$stored = get_option( self::VERSION_OPTION );
 		if ( FAST_WP_VERSION === $stored ) {
@@ -85,7 +85,7 @@ class Plugin {
 		}
 	}
 
-	/** Aplica as opções: arquivo de configuração, advanced-cache.php, wp-config, .htaccess e agendamentos. */
+	/** Applies settings: config file, advanced-cache.php, wp-config, .htaccess and schedules. */
 	public static function apply_settings() {
 		Settings::write_config();
 		$s = Settings::all();
@@ -112,7 +112,7 @@ class Plugin {
 
 	public static function activate() {
 		wp_mkdir_p( FAST_WP_CACHE_DIR );
-		// Primeira instalação: começa em modo de teste (visitantes não são afetados até você liberar).
+		// First install: starts in test mode (visitors are not affected until you go live).
 		if ( false === get_option( Settings::OPTION ) ) {
 			add_option( Settings::OPTION, Settings::defaults(), '', true );
 			Settings::reset_cache();

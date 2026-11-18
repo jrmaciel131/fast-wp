@@ -1,6 +1,6 @@
 <?php
 /**
- * Limpeza do banco de dados.
+ * Database cleanup.
  *
  * @package FastWP
  */
@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Database {
 
-	/** Itens que a limpeza remove. */
+	/** Items removed by the cleanup. */
 	public static function counts() {
 		global $wpdb;
 		return array(
@@ -25,15 +25,15 @@ class Database {
 
 	public static function labels() {
 		return array(
-			'revisions'  => 'Revisões de posts e páginas',
-			'autodrafts' => 'Rascunhos automáticos',
-			'trash'      => 'Posts e páginas na lixeira',
-			'spam'       => 'Comentários de spam e na lixeira',
-			'transients' => 'Transientes expirados',
+			'revisions'  => t( 'Post and page revisions' ),
+			'autodrafts' => t( 'Auto-drafts' ),
+			'trash'      => t( 'Posts and pages in the trash' ),
+			'spam'       => t( 'Spam and trashed comments' ),
+			'transients' => t( 'Expired transients' ),
 		);
 	}
 
-	/** Executa a limpeza. Usa as funções do WordPress (que também limpam os metadados). */
+	/** Runs the cleanup. Uses WordPress functions (which also clean metadata). */
 	public static function clean() {
 		global $wpdb;
 		$done = array_fill_keys( array_keys( self::labels() ), 0 );
@@ -66,7 +66,7 @@ class Database {
 		delete_expired_transients( true );
 		$done['transients'] = $before;
 
-		// Otimiza as tabelas do site.
+		// Optimizes the site's tables.
 		$tables = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->prefix ) . '%' ) );
 		foreach ( $tables as $t ) {
 			$wpdb->query( 'OPTIMIZE TABLE `' . esc_sql( $t ) . '`' ); // phpcs:ignore

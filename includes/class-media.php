@@ -1,6 +1,6 @@
 <?php
 /**
- * Imagens e vídeos: lazy load, imagem principal (LCP), miniatura do YouTube, fundos e WebP.
+ * Images and videos: lazy load, main image (LCP), YouTube thumbnail, backgrounds and WebP.
  *
  * @package FastWP
  */
@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Media {
 
-	/** @var string[] Tags para o <head>. */
+	/** @var string[] Tags for the <head>. */
 	public $preloads = array();
 
 	/** @var bool */
@@ -20,7 +20,7 @@ class Media {
 	/** @var bool */
 	public $uses_lazy_bg = false;
 
-	/** Marcadores do começo do conteúdo principal (depois do cabeçalho). */
+	/** Markers of where the main content starts (after the header). */
 	const CONTENT_MARKERS = '#data-elementor-type=["\'](?:wp-page|wp-post|single-page|single-post|single|archive|product|search-results|error-404|landing-page)["\']|<main\b|elementor-location-single|elementor-location-archive|id=["\'](?:content|primary|main)["\']#i';
 
 	public function process( $html ) {
@@ -112,8 +112,8 @@ class Media {
 	}
 
 	/**
-	 * Escolhe a imagem principal: a primeira imagem do conteúdo (depois do cabeçalho)
-	 * que não seja ícone pequeno nem SVG.
+	 * Picks the main image: the first content image (after the header)
+	 * that is not a small icon or an SVG.
 	 */
 	private function find_lcp_index( $html ) {
 		$start = 0;
@@ -123,7 +123,7 @@ class Media {
 		if ( ! preg_match_all( '#<img\b[^>]*>#i', $html, $imgs, PREG_OFFSET_CAPTURE ) ) {
 			return -1;
 		}
-		// O WordPress já marca a imagem principal com fetchpriority="high": respeita a escolha dele.
+		// WordPress already marks the main image with fetchpriority="high": respect its choice.
 		foreach ( $imgs[0] as $i => $img ) {
 			if ( preg_match( '/\sfetchpriority\s*=\s*["\']?high/i', $img[0] ) ) {
 				return $i;
@@ -161,7 +161,7 @@ class Media {
 		$this->preloads[ $src ] = $tag . ' fetchpriority="high">';
 	}
 
-	/** Troca iframes do YouTube por miniatura + botão. O player só carrega no clique. */
+	/** Replaces YouTube iframes with a thumbnail + button. The player only loads on click. */
 	private function youtube( $html ) {
 		return preg_replace_callback(
 			'#<iframe\b[^>]*src=["\']([^"\']*youtube(?:-nocookie)?\.com/embed/([A-Za-z0-9_-]{6,20})[^"\']*)["\'][^>]*>\s*</iframe>#i',
@@ -174,7 +174,7 @@ class Media {
 				$src                = html_entity_decode( $m[1], ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 				$src               .= ( false === strpos( $src, '?' ) ? '?' : '&' ) . 'autoplay=1';
 				$id                 = $m[2];
-				$title              = isset( $attrs['title'] ) ? $attrs['title'] : 'Vídeo do YouTube';
+				$title              = isset( $attrs['title'] ) ? $attrs['title'] : t( 'YouTube video' );
 				$style              = '';
 				if ( ! empty( $attrs['width'] ) && ! empty( $attrs['height'] ) && (int) $attrs['height'] > 0 && ctype_digit( (string) $attrs['width'] ) ) {
 					$style = ' style="aspect-ratio:' . (int) $attrs['width'] . '/' . (int) $attrs['height'] . '"';
@@ -182,13 +182,13 @@ class Media {
 				$class = 'fwp-yt' . ( ! empty( $attrs['class'] ) ? ' ' . esc_attr( $attrs['class'] ) : '' );
 				return '<div class="' . $class . '" data-fwp-yt="' . esc_url( $src ) . '" data-title="' . esc_attr( $title ) . '"' . $style . '>'
 					. '<img src="https://i.ytimg.com/vi/' . esc_attr( $id ) . '/hqdefault.jpg" alt="' . esc_attr( $title ) . '" loading="lazy" decoding="async" data-fwp-skip>'
-					. '<button type="button" class="fwp-yt-play" aria-label="Reproduzir vídeo"></button></div>';
+					. '<button type="button" class="fwp-yt-play" aria-label="' . esc_attr( t( 'Play video' ) ) . '"></button></div>';
 			},
 			$html
 		);
 	}
 
-	/** Fundos escritos no atributo style: só carregam quando o elemento aparece na tela. */
+	/** Backgrounds in the style attribute: only load when the element comes into view. */
 	private function lazy_backgrounds( $html ) {
 		$count = 0;
 		return preg_replace_callback(
@@ -196,14 +196,14 @@ class Media {
 			function ( $m ) use ( &$count ) {
 				$count++;
 				if ( $count <= 2 ) {
-					return $m[0]; // Os primeiros fundos podem estar no topo da página.
+					return $m[0]; // The first backgrounds may be at the top of the page.
 				}
 				$attrs = Html::attrs( $m[0] );
 				if ( empty( $attrs['style'] ) || isset( $attrs['data-no-lazy'] ) ) {
 					return $m[0];
 				}
 				$style = Html::decoded( $attrs, 'style' );
-				// Só a propriedade background-image (a forma curta "background:" leva cor e posição junto).
+				// Only the background-image property (the "background:" shorthand also carries color and position).
 				if ( ! preg_match( '/background-image\s*:\s*url\(\s*[\'"]?([^\'")]+)[\'"]?\s*\)\s*;?/i', $style, $bg ) ) {
 					return $m[0];
 				}

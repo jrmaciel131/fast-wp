@@ -1,9 +1,9 @@
 <?php
 /**
- * Decide se a requisição pode usar o cache de página e calcula o caminho do arquivo.
+ * Decides whether the request can use the page cache and works out the file path.
  *
- * Esta classe NÃO usa funções do WordPress: ela também é carregada pelo advanced-cache.php,
- * que roda antes do WordPress terminar de carregar.
+ * This class does NOT use WordPress functions: it is also loaded by advanced-cache.php,
+ * which runs before WordPress has finished loading.
  *
  * @package FastWP
  */
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Request {
 
-	/** Cookies que indicam visitante logado, com carrinho ou com conteúdo personalizado. */
+	/** Cookies that mean a logged-in visitor, a cart or personalized content. */
 	const DEFAULT_COOKIES = array(
 		'wordpress_logged_in_',
 		'wp-postpass_',
@@ -25,15 +25,15 @@ class Request {
 		'edd_items_in_cart',
 	);
 
-	/** Caminhos que nunca entram no cache. */
+	/** Paths that are never cached. */
 	const DENY_PATHS = '#(/wp-admin|/wp-login\.php|/wp-json|/xmlrpc\.php|/wp-cron\.php|/wp-content/|/wp-includes/|\.php$|/feed/?$|/embed/?$|/trackback/?$|sitemap[^/]*\.xml|robots\.txt$|\.(xml|txt|json|ico|map|xsl)$)#i';
 
 	/**
-	 * Retorna o destino do cache para a requisição atual ou null se ela não pode usar cache.
+	 * Returns the cache target for the current request, or null if it cannot be cached.
 	 *
-	 * @param array $cfg     Configuração gravada pelo plugin (config.php).
-	 * @param array $server  Normalmente $_SERVER.
-	 * @param array $cookies Normalmente $_COOKIE.
+	 * @param array $cfg     Settings written by the plugin (config.php).
+	 * @param array $server  Usually $_SERVER.
+	 * @param array $cookies Usually $_COOKIE.
 	 * @return array|null    ['dir' => ..., 'file' => ...]
 	 */
 	public static function cache_target( array $cfg, array $server, array $cookies ) {
@@ -79,13 +79,13 @@ class Request {
 		return self::target_for( $cfg['dir'], $host, $path, self::is_https( $server ), $mobile );
 	}
 
-	/** Host da requisição, em minúsculas e sem porta. */
+	/** Request host, lowercase and without the port. */
 	public static function host( array $server ) {
 		$host = isset( $server['HTTP_HOST'] ) ? strtolower( (string) $server['HTTP_HOST'] ) : '';
 		return (string) preg_replace( '/:\d+$/', '', $host );
 	}
 
-	/** True quando todos os parâmetros da URL podem ser ignorados (utm, gclid, fbclid...). */
+	/** True when every URL parameter can be ignored (utm, gclid, fbclid...). */
 	public static function query_is_ignorable( $query, array $ignore ) {
 		foreach ( explode( '&', $query ) as $pair ) {
 			if ( '' === $pair ) {
@@ -119,7 +119,7 @@ class Request {
 		return true;
 	}
 
-	/** Verifica se o caminho pode ir para o cache. */
+	/** Checks whether the path can be cached. */
 	public static function path_is_cacheable( $path, array $exclude ) {
 		if ( '' === $path || '/' !== $path[0] || false !== strpos( $path, '..' ) ) {
 			return false;
@@ -158,7 +158,7 @@ class Request {
 	}
 
 	/**
-	 * Calcula pasta e arquivo do cache. A estrutura casa com as regras do .htaccess:
+	 * Works out the cache folder and file. The layout matches the .htaccess rules:
 	 * pages/{host}/{caminho}/index[-mobile][-https].html
 	 */
 	public static function target_for( $base, $host, $path, $https, $mobile ) {
@@ -174,9 +174,9 @@ class Request {
 	}
 
 	/**
-	 * Entrega o arquivo do cache, se existir e estiver válido.
+	 * Serves the cache file when it exists and is still valid.
 	 *
-	 * @return bool True se a resposta foi enviada.
+	 * @return bool True when the response was sent.
 	 */
 	public static function serve( array $target, array $cfg, array $server ) {
 		$file = $target['file'];
@@ -229,7 +229,7 @@ class Request {
 		return true;
 	}
 
-	/** Grava o HTML no cache de forma atômica (arquivo temporário + rename). */
+	/** Stores the HTML in the cache atomically (temporary file + rename). */
 	public static function store( array $target, $html ) {
 		$dir = $target['dir'];
 		if ( ! is_dir( $dir ) && ! @mkdir( $dir, 0755, true ) && ! is_dir( $dir ) ) { // phpcs:ignore

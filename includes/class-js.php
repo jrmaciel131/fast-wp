@@ -1,6 +1,6 @@
 <?php
 /**
- * JavaScript: atrasar até a interação, adiar (defer) e minificar.
+ * JavaScript: delay until interaction, defer and minify.
  *
  * @package FastWP
  */
@@ -11,10 +11,10 @@ defined( 'ABSPATH' ) || exit;
 
 class Js {
 
-	/** Tipos de <script> que são JavaScript de verdade. */
+	/** <script> types that are real JavaScript. */
 	const JS_TYPES = array( '', 'text/javascript', 'application/javascript', 'module', 'text/ecmascript', 'application/ecmascript' );
 
-	/** Scripts que nunca são atrasados (precisam rodar logo para a página aparecer certa). */
+	/** Scripts that are never delayed (they must run early for the page to render correctly). */
 	const NEVER_DELAY = array(
 		'e-lazyloaded', 'lazyloadRunObserver', 'no-js', 'document.documentElement.className',
 		'fwp-loader', 'wp-emoji', 'consent', 'cookieyes', 'cookie-law-info', 'complianz',
@@ -35,8 +35,8 @@ class Js {
 		$delay_exclude = array_merge( self::NEVER_DELAY, Settings::lines( 'delay_exclude' ) );
 		if ( ! $trackers ) {
 			$delay_exclude = array_merge( $delay_exclude, Assets::tracker_patterns() );
-			// Plugins de pixel que dependem do jQuery (ex.: PixelYourSite): o jQuery também não pode
-			// ser atrasado, senão o pixel só dispararia depois da primeira interação.
+			// Pixel plugins that depend on jQuery (e.g. PixelYourSite): jQuery cannot be
+			// delayed either, or the pixel would only fire after the first interaction.
 			if ( Assets::matches( $html, Assets::jquery_trackers() ) ) {
 				$delay_exclude = array_merge( $delay_exclude, Assets::jquery_trackers(), array( '/jquery.min.js', '/jquery.js', 'jquery-migrate', 'jquery-core-js-extra' ) );
 			}
@@ -75,7 +75,7 @@ class Js {
 					return $m[0];
 				}
 
-				// 1) Atrasar até a interação.
+				// 1) Delay until interaction.
 				if ( $delay && ! Assets::matches( $haystack, $delay_exclude ) ) {
 					$this->has_delayed = true;
 					if ( 'module' === $type ) {
@@ -90,7 +90,7 @@ class Js {
 					return Html::tag( 'script', $attrs ) . $code . '</script>';
 				}
 
-				// 2) Adiar (defer).
+				// 2) Defer.
 				if ( ! $defer || 'module' === $type || Assets::matches( $haystack, $defer_exclude ) ) {
 					return Html::tag( 'script', $attrs ) . $code . '</script>';
 				}
@@ -103,7 +103,7 @@ class Js {
 					}
 					return Html::tag( 'script', $attrs ) . '</script>';
 				}
-				// Script escrito na página depois de um script adiado: roda na mesma ordem, também adiado.
+				// Inline script after a deferred script: runs in the same order, also deferred.
 				if ( $deferred_any ) {
 					$attrs['src']   = 'data:text/javascript;base64,' . base64_encode( $code ); // phpcs:ignore
 					$attrs['defer'] = true;
@@ -115,7 +115,7 @@ class Js {
 		);
 	}
 
-	/** Gera uma cópia minificada de um arquivo JS local que ainda não é .min.js. */
+	/** Creates a minified copy of a local JS file that is not .min.js yet. */
 	private function minified_url( $src ) {
 		$clean = preg_replace( '/[?#].*$/', '', $src );
 		if ( preg_match( '/[.-]min\.js$/i', $clean ) ) {
@@ -151,8 +151,8 @@ class Js {
 	}
 
 	/**
-	 * Script que roda no navegador: carrega os scripts atrasados na primeira interação,
-	 * libera o CSS completo, faz o lazy load dos fundos e a miniatura do YouTube.
+	 * Browser script: loads delayed scripts on the first interaction,
+	 * releases the full CSS, lazy loads backgrounds and handles the YouTube thumbnail.
 	 */
 	public static function loader( array $cfg ) {
 		$json = wp_json_encode( $cfg );
@@ -195,7 +195,7 @@ JS;
 		return '<script id="fwp-loader" data-fwp-skip>' . str_replace( 'W_CFG', $json, $js ) . '</script>';
 	}
 
-	/** CSS pequeno usado pela miniatura do YouTube e pelos elementos com animação. */
+	/** Small CSS used by the YouTube thumbnail and animated elements. */
 	public static function inline_css( $youtube, $animations ) {
 		$css = '';
 		if ( $youtube ) {

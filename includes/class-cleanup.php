@@ -1,7 +1,7 @@
 <?php
 /**
- * Limpeza do WordPress: emojis, embeds, cabeçalho, XML-RPC, dashicons, CSS do Gutenberg,
- * jQuery Migrate e Heartbeat.
+ * WordPress cleanup: emojis, embeds, head tags, XML-RPC, Dashicons, Gutenberg CSS,
+ * jQuery Migrate and Heartbeat.
  *
  * @package FastWP
  */

@@ -1,19 +1,19 @@
 <?php
 /**
- * Teste com uma página real (não roda no GitHub).
+ * Test with a real page (does not run on GitHub).
  *
- * Uso:
- *   FWP_TEST_ROOT=tests/fixtures/site FWP_TEST_HOME=https://www.seusite.com.br php tests/real-site.php tests/fixtures/home.html
+ * Usage:
+ *   FWP_TEST_ROOT=tests/fixtures/site FWP_TEST_HOME=https://www.yoursite.com php tests/real-site.php tests/fixtures/home.html
  *
- * A pasta FWP_TEST_ROOT deve ter os arquivos CSS do site nos mesmos caminhos (wp-content/...).
- * Gera tests/output/real-original.html e tests/output/real-optimized.html e um resumo.
+ * The FWP_TEST_ROOT folder must hold the site's CSS files at the same paths (wp-content/...).
+ * Writes tests/output/real-original.html, tests/output/real-optimized.html and a summary.
  */
 
 require __DIR__ . '/bootstrap.php';
 
 $file = isset( $argv[1] ) ? $argv[1] : '';
 if ( ! is_file( $file ) ) {
-	fwrite( STDERR, "Informe o arquivo HTML.\n" );
+	fwrite( STDERR, "Pass the HTML file.\n" );
 	exit( 1 );
 }
 $html = file_get_contents( $file );
@@ -22,7 +22,7 @@ fwp_set( array() );
 $t0  = microtime( true );
 $out = ( new FastWP\Optimizer() )->process( $html );
 $t1  = microtime( true );
-// Segunda vez: com os arquivos já processados guardados.
+// Second run: with the processed files already cached.
 $out = ( new FastWP\Optimizer() )->process( $html );
 $t2  = microtime( true );
 
@@ -32,10 +32,10 @@ file_put_contents( __DIR__ . '/output/real-optimized.html', $out );
 
 $err = get_option( FastWP\Optimizer::ERROR_OPTION );
 if ( $err ) {
-	echo 'ERRO REGISTRADO: ' . $err['message'] . "\n";
+	echo 'LOGGED ERROR: ' . $err['message'] . "\n";
 }
 
-// Tamanho do CSS que bloqueia a renderização, antes e depois.
+// Size of render-blocking CSS, before and after.
 $blocking_before = 0;
 if ( preg_match_all( "#<link[^>]*rel=['\"]stylesheet['\"][^>]*>#i", $html, $m ) ) {
 	foreach ( $m[0] as $tag ) {
@@ -68,16 +68,16 @@ if ( preg_match_all( '#<style\b[^>]*>(.*?)</style>#is', $out, $m ) ) {
 $kb = function ( $b ) {
 	return number_format( $b / 1024, 1, ',', '.' ) . ' KB';
 };
-echo "\n== Resumo ==\n";
-printf( "Tempo da 1a otimização: %d ms | com arquivos guardados: %d ms\n", ( $t1 - $t0 ) * 1000, ( $t2 - $t1 ) * 1000 );
+echo "\n== Summary ==\n";
+printf( "First optimization: %d ms | with cached files: %d ms\n", ( $t1 - $t0 ) * 1000, ( $t2 - $t1 ) * 1000 );
 printf( "HTML: %s -> %s\n", $kb( strlen( $html ) ), $kb( strlen( $out ) ) );
-printf( "CSS em arquivos que bloqueiam a página (antes): %s\n", $kb( $blocking_before ) );
-printf( "CSS inline antes: %s | depois (inclui CSS usado): %s | CSS usado: %s\n", $kb( $inline_before ), $kb( $inline_after ), $kb( $used ) );
-printf( "Folhas de estilo bloqueando depois: %d\n", preg_match_all( "#<link(?![^>]*data-fwp-href)[^>]*rel=['\"]?stylesheet#i", $out ) );
-printf( "Scripts atrasados: %d | com defer: %d | normais: %d\n", substr_count( $out, 'type="fwp/delay"' ), preg_match_all( '#<script[^>]*\sdefer[\s>]#', $out ), preg_match_all( '#<script(?![^>]*(?:fwp/delay|defer|ld\+json|application/json|data-fwp-skip))[^>]*>#', $out ) );
-printf( "Imagens com lazy: %d | prioridade alta: %d | preload: %d\n", preg_match_all( '#<img[^>]*loading="lazy"#', $out ), preg_match_all( '#<img[^>]*fetchpriority="high"#', $out ), preg_match_all( '#<link rel="preload"#', $out ) );
+printf( "Render-blocking CSS files (before): %s\n", $kb( $blocking_before ) );
+printf( "Inline CSS before: %s | after (includes used CSS): %s | used CSS: %s\n", $kb( $inline_before ), $kb( $inline_after ), $kb( $used ) );
+printf( "Render-blocking stylesheets after: %d\n", preg_match_all( "#<link(?![^>]*data-fwp-href)[^>]*rel=['\"]?stylesheet#i", $out ) );
+printf( "Delayed scripts: %d | deferred: %d | normal: %d\n", substr_count( $out, 'type="fwp/delay"' ), preg_match_all( '#<script[^>]*\sdefer[\s>]#', $out ), preg_match_all( '#<script(?![^>]*(?:fwp/delay|defer|ld\+json|application/json|data-fwp-skip))[^>]*>#', $out ) );
+printf( "Lazy images: %d | high priority: %d | preloads: %d\n", preg_match_all( '#<img[^>]*loading="lazy"#', $out ), preg_match_all( '#<img[^>]*fetchpriority="high"#', $out ), preg_match_all( '#<link rel="preload"#', $out ) );
 
-// Valida o HTML resultante com o DOMDocument (contagem de erros, comparada com o original).
+// Validates the resulting HTML with DOMDocument (error count compared with the original).
 libxml_use_internal_errors( true );
 $d = new DOMDocument();
 $d->loadHTML( $html );
@@ -86,4 +86,4 @@ libxml_clear_errors();
 $d->loadHTML( $out );
 $e2 = count( libxml_get_errors() );
 libxml_clear_errors();
-printf( "Avisos de HTML (libxml): original %d | otimizado %d\n", $e1, $e2 );
+printf( "HTML warnings (libxml): original %d | optimized %d\n", $e1, $e2 );

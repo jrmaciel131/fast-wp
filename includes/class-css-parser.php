@@ -1,8 +1,8 @@
 <?php
 /**
- * Leitor de CSS simples e tolerante: separa regras, @media, @font-face, @keyframes etc.
+ * Small, forgiving CSS reader: splits rules, @media, @font-face, @keyframes, etc.
  *
- * Formato dos nós:
+ * Node format:
  *   ['rule', seletor, corpo]
  *   ['group', '@media ...', [filhos]]
  *   ['fontface', '@font-face', corpo]
@@ -22,7 +22,7 @@ class Css_Parser {
 
 	const GROUPS = array( 'media', 'supports', 'layer', 'container', 'document', 'scope', 'starting-style' );
 
-	/** Remove comentários respeitando strings. */
+	/** Removes comments, leaving strings untouched. */
 	public static function strip_comments( $css ) {
 		if ( false === strpos( $css, '/*' ) ) {
 			return $css;
@@ -75,7 +75,7 @@ class Css_Parser {
 		return $len;
 	}
 
-	/** Converte CSS (já sem comentários) em nós. */
+	/** Converts CSS (without comments) into nodes. */
 	public static function parse( $css ) {
 		$nodes = array();
 		$len   = strlen( $css );
@@ -102,7 +102,7 @@ class Css_Parser {
 				continue;
 			}
 			if ( '}' === $ch ) {
-				$i = $pos + 1; // Chave sobrando: ignora.
+				$i = $pos + 1; // Stray brace: ignore.
 				continue;
 			}
 			$close = self::block_end( $css, $pos, $len );
@@ -129,7 +129,7 @@ class Css_Parser {
 		return $nodes;
 	}
 
-	/** Procura o fim do seletor/prelúdio: "{", ";" ou "}" fora de strings e parênteses. */
+	/** Finds the end of a selector/prelude: "{", ";" or "}" outside strings and parentheses. */
 	private static function prelude_end( $css, $i, $len ) {
 		$depth = 0;
 		while ( $i < $len ) {
@@ -154,7 +154,7 @@ class Css_Parser {
 		return array( -1, '' );
 	}
 
-	/** Posição do "}" que fecha o bloco aberto em $open. */
+	/** Position of the "}" that closes the block opened at $open. */
 	private static function block_end( $css, $open, $len ) {
 		$depth = 0;
 		$i     = $open;
@@ -181,7 +181,7 @@ class Css_Parser {
 		return -1;
 	}
 
-	/** Converte os nós de volta em CSS. */
+	/** Converts nodes back into CSS. */
 	public static function render( array $nodes ) {
 		$out = '';
 		foreach ( $nodes as $n ) {
@@ -209,7 +209,7 @@ class Css_Parser {
 		return $out;
 	}
 
-	/** Divide uma lista de seletores pelas vírgulas de primeiro nível. */
+	/** Splits a selector list on top-level commas. */
 	public static function split_selectors( $sel ) {
 		$out   = array();
 		$depth = 0;

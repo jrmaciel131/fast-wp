@@ -1,9 +1,9 @@
 <?php
 /**
- * Atualizações pelo GitHub (Releases). Sem bibliotecas externas.
+ * Updates from GitHub (Releases). No external libraries.
  *
- * Canal "Estável": última release normal. Canal "Teste": inclui pré-lançamentos (tags com -beta, -rc).
- * O pacote usado é o arquivo fast-wp.zip anexado à release (gerado pela GitHub Action do repositório).
+ * "Stable" channel: latest normal release. "Beta" channel: includes pre-releases (tags with -beta, -rc).
+ * The package is the fast-wp.zip file attached to the release (built by the repository's GitHub Action).
  *
  * @package FastWP
  */
@@ -32,7 +32,7 @@ class Updater {
 		return plugin_basename( FAST_WP_FILE );
 	}
 
-	/** Última versão disponível no GitHub (guardada por 6 horas). */
+	/** Latest version available on GitHub (cached for 6 hours). */
 	public static function latest( $force = false ) {
 		$repo = self::repo();
 		if ( '' === $repo ) {
@@ -97,7 +97,7 @@ class Updater {
 		return $release;
 	}
 
-	/** Filtro update_plugins_github.com: informa a nova versão ao WordPress. */
+	/** update_plugins_github.com filter: tells WordPress about the new version. */
 	public static function check( $update, $plugin_data, $plugin_file ) {
 		if ( self::basename() !== $plugin_file ) {
 			return $update;
@@ -119,7 +119,7 @@ class Updater {
 		);
 	}
 
-	/** Tela "Ver detalhes" do painel de plugins. */
+	/** "View details" screen in the plugins list. */
 	public static function info( $result, $action, $args ) {
 		if ( 'plugin_information' !== $action || empty( $args->slug ) || self::SLUG !== $args->slug ) {
 			return $result;
@@ -141,7 +141,7 @@ class Updater {
 		);
 	}
 
-	/** O zip do GitHub pode vir com outro nome de pasta: renomeia para "fast-wp". */
+	/** The GitHub zip may use another folder name: rename it to "fast-wp". */
 	public static function fix_folder( $source, $remote_source, $upgrader, $hook_extra = array() ) {
 		global $wp_filesystem;
 		if ( empty( $hook_extra['plugin'] ) || self::basename() !== $hook_extra['plugin'] ) {

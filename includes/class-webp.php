@@ -1,6 +1,6 @@
 <?php
 /**
- * Cria versões WebP das imagens no próprio servidor (GD ou Imagick). foto.jpg -> foto.jpg.webp
+ * Creates WebP copies of images on the server itself (GD or Imagick). photo.jpg -> photo.jpg.webp
  *
  * @package FastWP
  */
@@ -25,7 +25,7 @@ class Webp {
 		if ( Settings::get( 'webp_convert' ) && self::supported() ) {
 			add_filter( 'wp_generate_attachment_metadata', array( __CLASS__, 'on_upload' ), 20, 2 );
 		}
-		// Ao apagar uma imagem, apaga também a versão WebP.
+		// When an image is deleted, delete its WebP copy too.
 		add_filter(
 			'wp_delete_file',
 			function ( $file ) {
@@ -45,7 +45,7 @@ class Webp {
 		return $metadata;
 	}
 
-	/** Arquivo original + todos os tamanhos gerados. */
+	/** Original file + every generated size. */
 	public static function files_for( $attachment_id, $metadata = null ) {
 		$file = get_attached_file( $attachment_id );
 		if ( ! $file || ! preg_match( '/\.(jpe?g|png)$/i', $file ) ) {
@@ -69,7 +69,7 @@ class Webp {
 		return array_unique( $files );
 	}
 
-	/** Converte um arquivo. Só mantém o WebP se ele ficar menor que o original. */
+	/** Converts one file. Only keeps the WebP when it is smaller than the original. */
 	public static function convert( $file ) {
 		if ( ! is_file( $file ) || is_file( $file . '.webp' ) ) {
 			return false;
@@ -109,7 +109,7 @@ class Webp {
 		return true;
 	}
 
-	/** Inicia a conversão das imagens que já existem. */
+	/** Starts converting the images that already exist. */
 	public static function start_bulk() {
 		update_option(
 			self::BULK_OPTION,
@@ -152,7 +152,7 @@ class Webp {
 			$state['offset']++;
 			$processed++;
 			if ( microtime( true ) - $started > 20 ) {
-				break; // Evita o limite de tempo do servidor; continua no próximo lote.
+				break; // Avoids the server time limit; continues in the next batch.
 			}
 		}
 		if ( count( $ids ) < 15 && count( $ids ) === $processed ) {

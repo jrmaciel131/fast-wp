@@ -1,6 +1,6 @@
 <?php
 /**
- * Junta todas as otimizações do HTML. Qualquer erro devolve a página original (falha segura).
+ * Runs every HTML optimization. Any error returns the original page (fail-safe).
  *
  * @package FastWP
  */
@@ -21,13 +21,13 @@ class Optimizer {
 		try {
 			$out = $this->run( $html );
 		} catch ( \Throwable $e ) {
-			self::log_error( $e->getMessage() . ' em ' . basename( $e->getFile() ) . ':' . $e->getLine() );
+			self::log_error( $e->getMessage() . ' @ ' . basename( $e->getFile() ) . ':' . $e->getLine() );
 			return $original;
 		}
 
-		// Conferência final: se a página encolheu demais ou perdeu o fechamento, usa a original.
+		// Final check: if the page shrank too much or lost its closing tag, use the original.
 		if ( false === stripos( $out, '</html>' ) || strlen( $out ) < strlen( $original ) * 0.3 ) {
-			self::log_error( 'Resultado inválido (página incompleta). A versão original foi entregue.' );
+			self::log_error( t( 'Invalid result (incomplete page). The original version was served.' ) );
 			return $original;
 		}
 		return $out;
@@ -36,11 +36,11 @@ class Optimizer {
 	private function run( $html ) {
 		$full = $html;
 
-		// Fontes do Google.
+		// Google Fonts.
 		$fonts = new Fonts();
 		$html  = $fonts->process( $html );
 
-		// CSS e mídia trabalham com scripts e comentários protegidos.
+		// CSS and media work with scripts and comments protected.
 		$guard = new Html();
 		$html  = $guard->protect( $html, array( 'script', 'comment', 'noscript', 'textarea', 'template' ) );
 
@@ -59,7 +59,7 @@ class Optimizer {
 		$js   = new Js();
 		$html = $js->process( $html );
 
-		// Itens no <head>: pré-carregamentos e CSS do próprio plugin.
+		// <head> items: preloads and the plugin's own CSS.
 		$animations = $js->has_delayed && Settings::get( 'elementor_animations' );
 		$head       = implode( '', $media->preloads ) . implode( '', $fonts->preloads ) . Js::inline_css( $media->uses_youtube, $animations );
 		$html       = Html::after_head_open( $html, $head );
@@ -79,10 +79,10 @@ class Optimizer {
 		if ( Settings::get( 'minify_html' ) ) {
 			$html = Minify::html( $html );
 		}
-		return $html . "\n<!-- fwp: otimizado pelo Fast WP " . FAST_WP_VERSION . ' -->';
+		return $html . "\n<!-- fwp: optimized by Fast WP " . FAST_WP_VERSION . ' -->';
 	}
 
-	/** Troca o endereço de arquivos estáticos pelo da CDN. */
+	/** Rewrites static file URLs to the CDN. */
 	private function cdn( $html ) {
 		$cdn = (string) Settings::get( 'cdn_url' );
 		if ( ! Settings::get( 'cdn_enabled' ) || '' === $cdn ) {

@@ -1,14 +1,14 @@
 <?php
 /**
- * Ambiente mínimo para testar as classes do Fast WP sem instalar o WordPress.
- * Simula só as funções do WordPress que as classes de otimização usam.
+ * Minimal environment to test the Fast WP classes without installing WordPress.
+ * It only mimics the WordPress functions used by the optimization classes.
  */
 
 error_reporting( E_ALL );
 ini_set( 'display_errors', '1' );
 
 $fwp_test_root = getenv( 'FWP_TEST_ROOT' ) ? getenv( 'FWP_TEST_ROOT' ) : __DIR__ . '/output/site';
-$fwp_test_home = getenv( 'FWP_TEST_HOME' ) ? getenv( 'FWP_TEST_HOME' ) : 'https://exemplo.com.br';
+$fwp_test_home = getenv( 'FWP_TEST_HOME' ) ? getenv( 'FWP_TEST_HOME' ) : 'https://example.com';
 
 define( 'ABSPATH', rtrim( str_replace( '\\', '/', $fwp_test_root ), '/' ) . '/' );
 define( 'WPINC', 'wp-includes' );
@@ -143,6 +143,7 @@ function get_bloginfo() {
 }
 
 require FAST_WP_DIR . 'includes/class-request.php';
+require FAST_WP_DIR . 'includes/class-i18n.php';
 require FAST_WP_DIR . 'includes/class-settings.php';
 require FAST_WP_DIR . 'includes/class-html.php';
 require FAST_WP_DIR . 'includes/class-minify.php';
@@ -155,7 +156,7 @@ require FAST_WP_DIR . 'includes/class-media.php';
 require FAST_WP_DIR . 'includes/class-js.php';
 require FAST_WP_DIR . 'includes/class-optimizer.php';
 
-/** Define opções para o teste (mesclando com os padrões, modo de teste desligado). */
+/** Sets options for a test (merged with defaults, test mode off). */
 function fwp_set( array $values ) {
 	$GLOBALS['fwp_options']['fast_wp_settings'] = array_merge( FastWP\Settings::defaults(), array( 'test_mode' => 0 ), $values );
 	FastWP\Settings::reset_cache();
@@ -169,6 +170,6 @@ function check( $cond, $label ) {
 		echo "  ok   $label\n";
 	} else {
 		$GLOBALS['fwp_fail']++;
-		echo "  FALHOU  $label\n";
+		echo "  FAILED  $label\n";
 	}
 }

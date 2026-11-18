@@ -2,10 +2,10 @@
 /**
  * Fast WP - advanced-cache.php (FAST_WP_DROPIN)
  *
- * Arquivo gerado automaticamente pelo plugin Fast WP. Ele entrega as páginas do cache
- * antes de o WordPress carregar. É removido quando o plugin é desativado.
+ * File generated automatically by the Fast WP plugin. It serves cached pages
+ * before WordPress loads. It is removed when the plugin is deactivated.
  *
- * Para desligar tudo numa emergência, coloque no wp-config.php:
+ * To switch everything off in an emergency, add to wp-config.php:
  * define( 'FAST_WP_DISABLE', true );
  */
 

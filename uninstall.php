@@ -1,6 +1,6 @@
 <?php
 /**
- * Remoção completa do Fast WP (ao excluir o plugin pelo painel).
+ * Full removal of Fast WP (when the plugin is deleted from the dashboard).
  *
  * @package FastWP
  */
@@ -19,5 +19,5 @@ if ( is_dir( $dir ) ) {
 	}
 	@rmdir( $dir ); // phpcs:ignore
 }
-// As versões .webp das imagens ficam na pasta de uploads e continuam funcionando sem o plugin;
-// não são apagadas para não quebrar páginas em cache de CDN.
+// The .webp copies of images stay in the uploads folder and keep working without the plugin;
+// they are not deleted so pages cached by a CDN do not break.

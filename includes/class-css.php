@@ -1,6 +1,6 @@
 <?php
 /**
- * CSS: minificação dos arquivos do site e remoção do CSS não usado.
+ * CSS: minifies the site's stylesheets and removes unused CSS.
  *
  * @package FastWP
  */
@@ -11,15 +11,15 @@ defined( 'ABSPATH' ) || exit;
 
 class Css {
 
-	/** Tamanho mínimo de um bloco <style> para ser limpo. */
+	/** Minimum size of a <style> block to be cleaned. */
 	const INLINE_MIN = 8192;
 
-	/** @var bool Se algum CSS original ficou para carregar depois. */
+	/** @var bool Whether some original CSS is loaded later. */
 	public $has_deferred = false;
 
 	/**
-	 * @param string $html     HTML com scripts e comentários protegidos.
-	 * @param string $full_html HTML original completo (para ler as palavras usadas).
+	 * @param string $html      HTML with scripts and comments protected.
+	 * @param string $full_html Full original HTML (used to read which words are used).
 	 */
 	public function process( $html, $full_html ) {
 		$minify = (bool) Settings::get( 'minify_css' );
@@ -28,7 +28,7 @@ class Css {
 			return $html;
 		}
 
-		// 1) Lê todas as folhas de estilo locais.
+		// 1) Read every local stylesheet.
 		$sheets = array();
 		if ( preg_match_all( '#<link\b[^>]*>#i', $html, $links, PREG_OFFSET_CAPTURE ) ) {
 			foreach ( $links[0] as $l ) {
@@ -39,7 +39,7 @@ class Css {
 				}
 				$media = isset( $attrs['media'] ) ? strtolower( trim( (string) $attrs['media'] ) ) : 'all';
 				if ( '' !== $media && ! preg_match( '/^(all|screen)\b/', $media ) && false === strpos( $media, 'width' ) ) {
-					continue; // Impressão e outras mídias ficam como estão.
+					continue; // Print and other media stay as they are.
 				}
 				$href = Html::decoded( $attrs, 'href' );
 				$path = Assets::url_to_path( preg_replace( '/[?#].*$/', '', $href ) );
@@ -66,7 +66,7 @@ class Css {
 			if ( null !== $result ) {
 				return $result;
 			}
-			// Se a remoção não for confiável, segue só com a minificação.
+			// If removal is not reliable, fall back to minification only.
 		}
 
 		if ( $minify || Settings::get( 'fonts_swap' ) ) {
@@ -83,8 +83,8 @@ class Css {
 	}
 
 	/**
-	 * Lê e prepara o CSS de um arquivo: URLs absolutas, swap, WebP e minificação.
-	 * O resultado fica guardado enquanto o arquivo não mudar.
+	 * Reads and prepares a file's CSS: absolute URLs, swap, WebP and minification.
+	 * The result is kept while the file does not change.
 	 */
 	public function load( $path, $href ) {
 		$mtime = @filemtime( $path ); // phpcs:ignore
@@ -106,7 +106,7 @@ class Css {
 		return $css;
 	}
 
-	/** Ajustes aplicados a qualquer CSS antes de usar no site. */
+	/** Adjustments applied to any CSS before it is used on the site. */
 	public static function prepare( $css, $base_url ) {
 		$css = preg_replace( '/^\xEF\xBB\xBF/', '', $css );
 		$css = preg_replace( '/@charset\s+["\'][^"\']*["\']\s*;/i', '', $css );
@@ -120,7 +120,7 @@ class Css {
 		return $css;
 	}
 
-	/** Torna absolutas as URLs relativas de url(...) e aplica WebP nas imagens. */
+	/** Makes relative url(...) values absolute and applies WebP to images. */
 	public static function absolute_urls( $css, $base_url ) {
 		return preg_replace_callback(
 			'/url\(\s*([\'"]?)(.*?)\1\s*\)/i',
@@ -138,14 +138,14 @@ class Css {
 	}
 
 	/**
-	 * Troca cada folha de estilo pelo CSS que a página usa, no mesmo lugar (mantém a ordem).
+	 * Replaces each stylesheet with the CSS the page uses, in the same place (keeps the order).
 	 *
-	 * @return string|null Null quando o resultado não parece confiável.
+	 * @return string|null Null when the result does not look reliable.
 	 */
 	private function used_css( $html, $full_html, array $sheets ) {
 		$checker = new Used_Css( $full_html, Settings::lines( 'used_css_safelist' ) );
 
-		// Blocos <style> grandes também entram.
+		// Large <style> blocks are included too.
 		$inline = array();
 		if ( Settings::get( 'used_css_inline_styles' ) && preg_match_all( '#<style\b([^>]*)>(.*?)</style\s*>#is', $html, $st, PREG_SET_ORDER ) ) {
 			foreach ( $st as $s ) {
@@ -162,7 +162,7 @@ class Css {
 			return null;
 		}
 
-		// Etapa 1: regras.
+		// Step 1: rules.
 		$before    = 0;
 		$filtered  = array();
 		$reference = '';
@@ -172,17 +172,17 @@ class Css {
 			$filtered[ $i ] = $checker->filter_rules( $nodes );
 			$reference     .= Used_Css::reference_text( $filtered[ $i ] );
 		}
-		// Estilos escritos direto nos elementos também citam fontes e animações.
+		// Inline style attributes also reference fonts and animations.
 		if ( preg_match_all( '/\sstyle\s*=\s*(["\'])(.*?)\1/is', $full_html, $sm ) ) {
 			$reference .= implode( "\n", $sm[2] );
 		}
 		$reference .= $this->small_inline_styles( $html );
-		// Animações e fontes citadas nos data-settings do Elementor (ex.: "_animation":"fadeInUp").
+		// Animations and fonts referenced in Elementor data-settings (e.g. "_animation":"fadeInUp").
 		if ( preg_match_all( '/data-settings\s*=\s*(["\'])(.*?)\1/is', $full_html, $dm ) ) {
 			$reference .= html_entity_decode( implode( "\n", $dm[2] ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 		}
 
-		// Etapa 2: fontes e animações + montagem.
+		// Step 2: fonts and animations + assembly.
 		$font_opts = array(
 			'weights' => Used_Css::font_weights( $reference ),
 			'italic'  => (bool) preg_match( '/<(em|i|cite|dfn|var|address)\b/i', $full_html ) || (bool) preg_match( '/font-style\s*:\s*(italic|oblique)/i', $reference ),
@@ -195,7 +195,7 @@ class Css {
 			$after       += strlen( $output[ $i ] );
 		}
 
-		// Conferência de segurança: um resultado pequeno demais indica que algo deu errado.
+		// Safety check: a result that is too small means something went wrong.
 		if ( $before > 20000 && $after < 1500 ) {
 			return null;
 		}
@@ -224,7 +224,7 @@ class Css {
 		return $html;
 	}
 
-	/** Nós do CSS, guardados enquanto o conteúdo não mudar. */
+	/** CSS nodes, kept while the content does not change. */
 	private function parsed( $css ) {
 		$key = 'parsed-' . md5( $css ) . '.ser';
 		$raw = Assets::memo_get( $key );
@@ -239,7 +239,7 @@ class Css {
 		return $nodes;
 	}
 
-	/** Texto dos blocos <style> pequenos (não filtrados), usado como referência de fontes. */
+	/** Text of small (unfiltered) <style> blocks, used as a font reference. */
 	private function small_inline_styles( $html ) {
 		$out = '';
 		if ( preg_match_all( '#<style\b[^>]*>(.*?)</style\s*>#is', $html, $m ) ) {
@@ -252,7 +252,7 @@ class Css {
 		return $out;
 	}
 
-	/** @import precisa ficar no começo do CSS. */
+	/** @import must stay at the top of the CSS. */
 	private static function hoist_imports( $css ) {
 		if ( false === stripos( $css, '@import' ) ) {
 			return $css;

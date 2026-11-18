@@ -1,6 +1,6 @@
 <?php
 /**
- * Configurações: campos, padrões, predefinições e o arquivo de configuração lido pelo advanced-cache.php.
+ * Settings: fields, defaults, presets and the config file read by advanced-cache.php.
  *
  * @package FastWP
  */
@@ -16,126 +16,152 @@ class Settings {
 	/** @var array|null */
 	private static $cache = null;
 
-	/** Parâmetros de URL que não impedem o cache (tráfego pago e e-mail). */
+	/** URL parameters that do not prevent caching (paid traffic and email). */
 	const IGNORE_PARAMS = "utm_*\ngclid\ngbraid\nwbraid\nfbclid\nmsclkid\nttclid\ntwclid\nli_fat_id\ndclid\n_ga\n_gl\nmc_cid\nmc_eid\nref\nsrsltid";
 
 	/**
-	 * Definição de todas as abas e campos. A tela de opções é montada a partir daqui.
+	 * Every tab and field. The settings screen is built from this list.
+	 * Field format: [ type, default, label, description, (select options) ].
 	 */
 	public static function fields() {
 		return array(
 			'cache'      => array(
-				'title'  => 'Cache',
+				'title'  => t( 'Cache' ),
 				'fields' => array(
-					'cache_enabled'            => array( 'checkbox', 1, 'Ativar cache de página', 'Guarda o HTML pronto e entrega sem carregar o WordPress.' ),
-					'cache_htaccess'           => array( 'checkbox', 1, 'Servir o cache direto pelo Apache (.htaccess)', 'Mais rápido. Se o servidor não for Apache/LiteSpeed, o cache é servido pelo PHP automaticamente.' ),
-					'cache_lifespan'           => array( 'number', 10, 'Validade do cache (horas)', '0 = não expira. 10 horas é seguro para formulários do Elementor.' ),
-					'cache_preload'            => array( 'checkbox', 1, 'Pré-carregar o cache de todo o site', 'Gera o cache das páginas e posts publicados em segundo plano.' ),
-					'cache_purge_all'          => array( 'checkbox', 1, 'Limpar todo o cache quando qualquer página for atualizada', 'Recomendado para Elementor (cabeçalho e rodapé aparecem em todas as páginas).' ),
-					'cache_mobile_separate'    => array( 'checkbox', 0, 'Cache separado para celular', 'Só é necessário se o tema mostrar HTML diferente no celular. Elementor não precisa.' ),
-					'browser_cache'            => array( 'checkbox', 1, 'Cache do navegador', 'Imagens, CSS, JS e fontes ficam guardados no navegador do visitante por 1 ano.' ),
-					'gzip'                     => array( 'checkbox', 1, 'Compressão GZIP', 'Reduz o tamanho dos arquivos enviados.' ),
-					'cache_ignore_params'      => array( 'textarea', self::IGNORE_PARAMS, 'Parâmetros de URL ignorados', 'Um por linha. URLs com esses parâmetros (anúncios) continuam recebendo o cache. Use * no fim para prefixo.' ),
-					'cache_exclude_urls'       => array( 'textarea', '', 'Nunca guardar em cache (URLs)', 'Um trecho de URL por linha, por exemplo /obrigado/' ),
-					'cache_exclude_cookies'    => array( 'textarea', '', 'Nunca usar cache com estes cookies', 'Um prefixo de cookie por linha.' ),
+					'cache_enabled'         => array( 'checkbox', 1, t( 'Enable page cache' ), t( 'Stores the finished HTML and serves it without loading WordPress.' ) ),
+					'cache_htaccess'        => array( 'checkbox', 1, t( 'Serve the cache directly from Apache (.htaccess)' ), t( 'Faster. If the server is not Apache/LiteSpeed, the cache is served by PHP automatically.' ) ),
+					'cache_lifespan'        => array( 'number', 10, t( 'Cache lifetime (hours)' ), t( '0 = never expires. 10 hours is safe for Elementor forms.' ) ),
+					'cache_preload'         => array( 'checkbox', 1, t( 'Preload the cache for the whole site' ), t( 'Builds the cache of published pages and posts in the background.' ) ),
+					'cache_purge_all'       => array( 'checkbox', 1, t( 'Clear the whole cache when any page is updated' ), t( 'Recommended for Elementor (header and footer appear on every page).' ) ),
+					'cache_mobile_separate' => array( 'checkbox', 0, t( 'Separate cache for mobile' ), t( 'Only needed if the theme outputs different HTML on mobile. Elementor does not.' ) ),
+					'browser_cache'         => array( 'checkbox', 1, t( 'Browser caching' ), t( 'Images, CSS, JS and fonts are kept in the visitor\'s browser for 1 year.' ) ),
+					'gzip'                  => array( 'checkbox', 1, t( 'GZIP compression' ), t( 'Reduces the size of the files sent.' ) ),
+					'cache_ignore_params'   => array( 'textarea', self::IGNORE_PARAMS, t( 'Ignored URL parameters' ), t( 'One per line. URLs with these parameters (ads) still get the cache. Use * at the end for a prefix.' ) ),
+					'cache_exclude_urls'    => array( 'textarea', '', t( 'Never cache these URLs' ), t( 'One URL fragment per line, for example /thank-you/' ) ),
+					'cache_exclude_cookies' => array( 'textarea', '', t( 'Never use the cache with these cookies' ), t( 'One cookie prefix per line.' ) ),
 				),
 			),
 			'arquivos'   => array(
-				'title'  => 'CSS e HTML',
+				'title'  => t( 'CSS and HTML' ),
 				'fields' => array(
-					'minify_html'              => array( 'checkbox', 1, 'Minificar HTML', 'Remove comentários e espaços extras do HTML.' ),
-					'minify_css'               => array( 'checkbox', 1, 'Minificar CSS', 'Gera cópias menores dos arquivos CSS do site.' ),
-					'used_css'                 => array( 'checkbox', 1, 'Remover CSS não usado', 'Cada página recebe só o CSS que ela usa, direto no HTML. Resolve "Reduza o CSS não usado" e "Elimine recursos que bloqueiam a renderização".' ),
-					'used_css_fallback'        => array( 'select', 'interaction', 'CSS completo depois', 'Quando carregar o CSS original, como garantia para menus, popups e efeitos.', array(
-						'interaction' => 'Na primeira interação do visitante (recomendado)',
-						'load'        => 'Logo depois que a página carregar',
-						'none'        => 'Nunca (máximo, mais arriscado)',
-					) ),
-					'used_css_inline_styles'   => array( 'checkbox', 1, 'Também limpar blocos de CSS grandes dentro do HTML', 'Blocos <style> acima de 8 KB.' ),
-					'used_css_safelist'        => array( 'textarea', '', 'Classes que nunca devem ser removidas', 'Uma por linha. Use * no fim para prefixo (ex.: meu-menu-*) ou /regex/.' ),
+					'minify_html'            => array( 'checkbox', 1, t( 'Minify HTML' ), t( 'Removes comments and extra spaces from the HTML.' ) ),
+					'minify_css'             => array( 'checkbox', 1, t( 'Minify CSS' ), t( 'Creates smaller copies of the site\'s CSS files.' ) ),
+					'used_css'               => array( 'checkbox', 1, t( 'Remove unused CSS' ), t( 'Each page gets only the CSS it uses, inside the HTML. Fixes "Reduce unused CSS" and "Eliminate render-blocking resources".' ) ),
+					'used_css_fallback'      => array(
+						'select',
+						'interaction',
+						t( 'Load the full CSS later' ),
+						t( 'When to load the original CSS, as a safety net for menus, popups and effects.' ),
+						array(
+							'interaction' => t( 'On the visitor\'s first interaction (recommended)' ),
+							'load'        => t( 'Right after the page loads' ),
+							'none'        => t( 'Never (maximum, riskier)' ),
+						),
+					),
+					'used_css_inline_styles' => array( 'checkbox', 1, t( 'Also clean large CSS blocks inside the HTML' ), t( '<style> blocks larger than 8 KB.' ) ),
+					'used_css_safelist'      => array( 'textarea', '', t( 'Classes that must never be removed' ), t( 'One per line. Use * at the end for a prefix (e.g. my-menu-*) or /regex/.' ) ),
 				),
 			),
 			'javascript' => array(
-				'title'  => 'JavaScript',
+				'title'  => t( 'JavaScript' ),
 				'fields' => array(
-					'delay_js'                 => array( 'checkbox', 1, 'Atrasar JavaScript até a interação', 'Os scripts só carregam quando o visitante toca, rola ou move o mouse. É o que mais aumenta a nota no celular.' ),
-					'delay_js_trackers'        => array( 'checkbox', 0, 'Atrasar também pixels e GTM (Meta, Google, TikTok, Clarity)', 'Aumenta a nota, mas o PageView só dispara depois da primeira interação. Deixe desligado se o rastreio de anúncios for prioridade.' ),
-					'delay_js_timeout'         => array( 'number', 0, 'Carregar mesmo sem interação depois de (segundos)', '0 = só com interação.' ),
-					'elementor_animations'     => array( 'checkbox', 1, 'Mostrar na hora os elementos com animação de entrada', 'Sem isso, elementos com animação do Elementor ficam invisíveis até o JS carregar.' ),
-					'delay_exclude'            => array( 'textarea', '', 'Nunca atrasar (trechos do script)', 'Um por linha: parte da URL do arquivo ou do código do script.' ),
-					'defer_js'                 => array( 'checkbox', 1, 'Adiar JavaScript (defer)', 'Os scripts que não forem atrasados deixam de bloquear a página.' ),
-					'defer_jquery'             => array( 'checkbox', 1, 'Adiar também o jQuery', 'Scripts escritos direto na página que usam jQuery são adiados junto, na mesma ordem.' ),
-					'defer_exclude'            => array( 'textarea', '', 'Nunca adiar (trechos do script)', 'Um por linha.' ),
-					'minify_js'                => array( 'checkbox', 0, 'Minificar JS', 'Só arquivos que ainda não são .min.js. Ganho pequeno; deixe desligado se algo quebrar.' ),
+					'delay_js'             => array( 'checkbox', 1, t( 'Delay JavaScript until interaction' ), t( 'Scripts only load when the visitor taps, scrolls or moves the mouse. This raises the mobile score the most.' ) ),
+					'delay_js_trackers'    => array( 'checkbox', 0, t( 'Also delay pixels and GTM (Meta, Google, TikTok, Clarity)' ), t( 'Raises the score, but the PageView only fires after the first interaction. Leave it off if ad tracking is the priority.' ) ),
+					'delay_js_timeout'     => array( 'number', 0, t( 'Load even without interaction after (seconds)' ), t( '0 = only on interaction.' ) ),
+					'elementor_animations' => array( 'checkbox', 1, t( 'Show elements with entrance animations right away' ), t( 'Without this, Elementor elements with animations stay invisible until the JS loads.' ) ),
+					'delay_exclude'        => array( 'textarea', '', t( 'Never delay (script fragments)' ), t( 'One per line: part of the file URL or of the script code.' ) ),
+					'defer_js'             => array( 'checkbox', 1, t( 'Defer JavaScript' ), t( 'Scripts that are not delayed stop blocking the page.' ) ),
+					'defer_jquery'         => array( 'checkbox', 1, t( 'Also defer jQuery' ), t( 'Inline scripts that use jQuery are deferred too, in the same order.' ) ),
+					'defer_exclude'        => array( 'textarea', '', t( 'Never defer (script fragments)' ), t( 'One per line.' ) ),
+					'minify_js'            => array( 'checkbox', 0, t( 'Minify JS' ), t( 'Only files that are not .min.js yet. Small gain; leave it off if something breaks.' ) ),
 				),
 			),
 			'midia'      => array(
-				'title'  => 'Imagens e vídeos',
+				'title'  => t( 'Images and videos' ),
 				'fields' => array(
-					'lazy_images'              => array( 'checkbox', 1, 'Lazy load de imagens', 'Imagens fora da tela só carregam quando o visitante chega nelas.' ),
-					'lazy_skip'                => array( 'number', 3, 'Não aplicar lazy load nas primeiras imagens', 'Quantidade de imagens do topo que carregam na hora (logo e banner).' ),
-					'lazy_iframes'             => array( 'checkbox', 1, 'Lazy load de iframes (mapas, vídeos)', '' ),
-					'youtube_facade'           => array( 'checkbox', 1, 'Trocar vídeos do YouTube por miniatura', 'O player só carrega no clique. Economiza cerca de 500 KB por vídeo.' ),
-					'lazy_bg'                  => array( 'checkbox', 1, 'Lazy load de imagens de fundo escritas no HTML', 'Para fundos do Elementor, ative também "Lazy Load Background Images" em Elementor > Configurações > Recursos.' ),
-					'lcp_priority'             => array( 'checkbox', 1, 'Priorizar a imagem principal (LCP)', 'A primeira imagem grande do conteúdo recebe prioridade alta e pré-carregamento.' ),
-					'lcp_preload_urls'         => array( 'textarea', '', 'Pré-carregar estas imagens em todas as páginas', 'Uma URL por linha. Útil quando o banner é imagem de fundo.' ),
-					'webp_convert'             => array( 'checkbox', 1, 'Criar versões WebP das imagens enviadas', 'Feito no próprio servidor, sem serviço externo.' ),
-					'webp_serve'               => array( 'checkbox', 1, 'Usar as versões WebP no site', 'Troca JPG/PNG pela versão WebP quando ela existir e for menor.' ),
+					'lazy_images'      => array( 'checkbox', 1, t( 'Lazy load images' ), t( 'Images outside the screen only load when the visitor reaches them.' ) ),
+					'lazy_skip'        => array( 'number', 3, t( 'Skip lazy load for the first images' ), t( 'How many images at the top load right away (logo and banner).' ) ),
+					'lazy_iframes'     => array( 'checkbox', 1, t( 'Lazy load iframes (maps, videos)' ), '' ),
+					'youtube_facade'   => array( 'checkbox', 1, t( 'Replace YouTube videos with a thumbnail' ), t( 'The player only loads on click. Saves about 500 KB per video.' ) ),
+					'lazy_bg'          => array( 'checkbox', 1, t( 'Lazy load background images written in the HTML' ), t( 'For Elementor backgrounds, also enable "Lazy Load Background Images" in Elementor > Settings > Features.' ) ),
+					'lcp_priority'     => array( 'checkbox', 1, t( 'Prioritize the main image (LCP)' ), t( 'The first large content image gets high priority and is preloaded.' ) ),
+					'lcp_preload_urls' => array( 'textarea', '', t( 'Preload these images on every page' ), t( 'One URL per line. Useful when the banner is a background image.' ) ),
+					'webp_convert'     => array( 'checkbox', 1, t( 'Create WebP copies of uploaded images' ), t( 'Done on your own server, with no external service.' ) ),
+					'webp_serve'       => array( 'checkbox', 1, t( 'Use the WebP copies on the site' ), t( 'Swaps JPG/PNG for the WebP copy when it exists and is smaller.' ) ),
 				),
 			),
 			'fontes'     => array(
-				'title'  => 'Fontes',
+				'title'  => t( 'Fonts' ),
 				'fields' => array(
-					'fonts_google_local'       => array( 'checkbox', 1, 'Hospedar Google Fonts no próprio site', 'Baixa as fontes uma vez e serve pelo seu domínio. Remove a conexão extra com o Google.' ),
-					'fonts_swap'               => array( 'checkbox', 1, 'Texto visível enquanto a fonte carrega (font-display: swap)', 'Resolve "Garanta que o texto permaneça visível".' ),
-					'fonts_preload'            => array( 'checkbox', 0, 'Pré-carregar a fonte principal', 'Pré-carrega o peso normal (400) das fontes do Google hospedadas localmente.' ),
+					'fonts_google_local' => array( 'checkbox', 1, t( 'Host Google Fonts on your own site' ), t( 'Downloads the fonts once and serves them from your domain. Removes the extra connection to Google.' ) ),
+					'fonts_swap'         => array( 'checkbox', 1, t( 'Visible text while the font loads (font-display: swap)' ), t( 'Fixes "Ensure text remains visible".' ) ),
+					'fonts_preload'      => array( 'checkbox', 0, t( 'Preload the main font' ), t( 'Preloads the regular (400) weight of self-hosted Google Fonts. It competes with the main image, so it is off by default.' ) ),
 				),
 			),
 			'limpeza'    => array(
-				'title'  => 'Limpeza',
+				'title'  => t( 'Cleanup' ),
 				'fields' => array(
-					'cleanup_emojis'           => array( 'checkbox', 1, 'Desativar emojis do WordPress', 'Remove o script e o CSS de emojis (o navegador já mostra emojis).' ),
-					'cleanup_embeds'           => array( 'checkbox', 1, 'Desativar embeds do WordPress', 'Remove o wp-embed.js.' ),
-					'cleanup_head'             => array( 'checkbox', 1, 'Limpar o cabeçalho', 'Remove RSD, wlwmanifest, shortlink e a versão do WordPress.' ),
-					'cleanup_xmlrpc'           => array( 'checkbox', 1, 'Desativar XML-RPC', 'Fecha uma porta usada em ataques. Desligue se usar o app do WordPress ou Jetpack.' ),
-					'cleanup_dashicons'        => array( 'checkbox', 0, 'Remover Dashicons para visitantes', 'Ícones do painel que alguns temas carregam sem precisar.' ),
-					'cleanup_block_css'        => array( 'checkbox', 0, 'Remover CSS do Gutenberg em páginas do Elementor', '' ),
-					'cleanup_jquery_migrate'   => array( 'checkbox', 0, 'Remover jQuery Migrate', 'Pode quebrar plugins antigos.' ),
-					'heartbeat'                => array( 'select', 'reduce', 'Heartbeat do WordPress', 'Requisições automáticas do painel.', array(
-						'default' => 'Padrão do WordPress',
-						'reduce'  => 'Reduzir para 60 segundos',
-						'front'   => 'Desativar no site e reduzir no painel',
-					) ),
+					'cleanup_emojis'         => array( 'checkbox', 1, t( 'Disable WordPress emojis' ), t( 'Removes the emoji script and CSS (browsers already show emojis).' ) ),
+					'cleanup_embeds'         => array( 'checkbox', 1, t( 'Disable WordPress embeds' ), t( 'Removes wp-embed.js.' ) ),
+					'cleanup_head'           => array( 'checkbox', 1, t( 'Clean the head' ), t( 'Removes RSD, wlwmanifest, shortlink and the WordPress version.' ) ),
+					'cleanup_xmlrpc'         => array( 'checkbox', 1, t( 'Disable XML-RPC' ), t( 'Closes a door used in attacks. Turn it off if you use the WordPress app or Jetpack.' ) ),
+					'cleanup_dashicons'      => array( 'checkbox', 0, t( 'Remove Dashicons for visitors' ), t( 'Dashboard icons that some themes load without needing them.' ) ),
+					'cleanup_block_css'      => array( 'checkbox', 0, t( 'Remove Gutenberg CSS on Elementor pages' ), '' ),
+					'cleanup_jquery_migrate' => array( 'checkbox', 0, t( 'Remove jQuery Migrate' ), t( 'May break old plugins.' ) ),
+					'heartbeat'              => array(
+						'select',
+						'reduce',
+						t( 'WordPress Heartbeat' ),
+						t( 'Automatic requests made by the dashboard.' ),
+						array(
+							'default' => t( 'WordPress default' ),
+							'reduce'  => t( 'Reduce to 60 seconds' ),
+							'front'   => t( 'Disable on the site and reduce in the dashboard' ),
+						),
+					),
 				),
 			),
 			'cdn'        => array(
-				'title'  => 'CDN',
+				'title'  => t( 'CDN' ),
 				'fields' => array(
-					'cdn_enabled'              => array( 'checkbox', 0, 'Usar CDN', 'Troca o endereço de imagens, CSS, JS e fontes pelo endereço da CDN.' ),
-					'cdn_url'                  => array( 'text', '', 'Endereço da CDN', 'Ex.: https://cdn.seusite.com.br' ),
+					'cdn_enabled' => array( 'checkbox', 0, t( 'Use a CDN' ), t( 'Rewrites image, CSS, JS and font URLs to the CDN address.' ) ),
+					'cdn_url'     => array( 'text', '', t( 'CDN address' ), t( 'E.g. https://cdn.yoursite.com' ) ),
 				),
 			),
 			'banco'      => array(
-				'title'  => 'Banco de dados',
+				'title'  => t( 'Database' ),
 				'fields' => array(
-					'db_weekly'                => array( 'checkbox', 0, 'Limpar o banco automaticamente toda semana', 'Revisões, rascunhos automáticos, lixeira, spam e transientes expirados.' ),
+					'db_weekly' => array( 'checkbox', 0, t( 'Clean the database automatically every week' ), t( 'Revisions, auto-drafts, trash, spam and expired transients.' ) ),
 				),
 			),
 			'avancado'   => array(
-				'title'  => 'Avançado',
+				'title'  => t( 'Advanced' ),
 				'fields' => array(
-					'auto_update'              => array( 'checkbox', 1, 'Atualizar o plugin automaticamente pelo GitHub', '' ),
-					'update_channel'           => array( 'select', 'stable', 'Canal de atualização', 'Use "Teste" em um site de teste para receber as versões antes dos outros.', array(
-						'stable' => 'Estável',
-						'beta'   => 'Teste (recebe pré-lançamentos)',
-					) ),
-					'github_repo'              => array( 'text', '', 'Repositório do GitHub', 'Formato usuario/repositorio. Vazio = usa o definido no código.' ),
+					'language'       => array(
+						'select',
+						'auto',
+						t( 'Plugin language' ),
+						t( 'Language of the Fast WP screens.' ),
+						array_merge( array( 'auto' => t( 'Automatic (WordPress language)' ) ), I18n::LANGUAGES ),
+					),
+					'auto_update'    => array( 'checkbox', 1, t( 'Update the plugin automatically from GitHub' ), '' ),
+					'update_channel' => array(
+						'select',
+						'stable',
+						t( 'Update channel' ),
+						t( 'Use "Beta" on a test site to receive new versions before the other sites.' ),
+						array(
+							'stable' => t( 'Stable' ),
+							'beta'   => t( 'Beta (receives pre-releases)' ),
+						),
+					),
+					'github_repo'    => array( 'text', '', t( 'GitHub repository' ), t( 'Format owner/repository. Empty = use the one set in the code.' ) ),
 				),
 			),
 		);
 	}
 
-	/** Valores internos que não aparecem como campo nas abas. */
+	/** Internal values that are not shown as fields. */
 	private static function internal_defaults() {
 		return array(
 			'test_mode' => 1,
@@ -143,11 +169,11 @@ class Settings {
 		);
 	}
 
-	/** Predefinições aplicadas pelos botões do painel. */
+	/** Presets applied by the dashboard buttons. */
 	public static function presets() {
 		return array(
 			'seguro'      => array(
-				'label'  => 'Seguro',
+				'label'  => t( 'Safe' ),
 				'values' => array(
 					'delay_js'          => 0,
 					'used_css'          => 0,
@@ -158,7 +184,7 @@ class Settings {
 				),
 			),
 			'recomendado' => array(
-				'label'  => 'Recomendado',
+				'label'  => t( 'Recommended' ),
 				'values' => array(
 					'delay_js'          => 1,
 					'delay_js_trackers' => 0,
@@ -172,7 +198,7 @@ class Settings {
 				),
 			),
 			'maximo'      => array(
-				'label'  => 'Máximo',
+				'label'  => t( 'Maximum' ),
 				'values' => array(
 					'delay_js'          => 1,
 					'delay_js_trackers' => 1,
@@ -211,7 +237,7 @@ class Settings {
 		return isset( $all[ $key ] ) ? $all[ $key ] : null;
 	}
 
-	/** Lê um campo de texto com uma regra por linha. */
+	/** Reads a text field that holds one rule per line. */
 	public static function lines( $key ) {
 		$raw = (string) self::get( $key );
 		$out = array();
@@ -224,15 +250,16 @@ class Settings {
 		return $out;
 	}
 
-	/** Salva valores (mesclando com os atuais) e atualiza o arquivo usado pelo cache. */
+	/** Saves values (merged with the current ones) and refreshes the cache config file. */
 	public static function update( array $values ) {
 		$all = array_merge( self::all(), $values );
 		update_option( self::OPTION, $all, true );
 		self::$cache = $all;
+		I18n::reset();
 		self::write_config();
 	}
 
-	/** Limpa e valida os valores enviados por uma aba da tela de opções. */
+	/** Sanitizes the values sent by one tab of the settings screen. */
 	public static function sanitize_tab( $tab, array $input ) {
 		$fields = self::fields();
 		if ( ! isset( $fields[ $tab ] ) ) {
@@ -268,7 +295,7 @@ class Settings {
 		return $out;
 	}
 
-	/** Hosts aceitos pelo cache (evita gerar cache para Host forjado). */
+	/** Hosts accepted by the cache (avoids creating cache files for a forged Host header). */
 	public static function hosts() {
 		$hosts = array();
 		foreach ( array( home_url(), site_url() ) as $url ) {
@@ -282,7 +309,7 @@ class Settings {
 		return array_values( array_unique( $hosts ) );
 	}
 
-	/** Configuração usada pelo advanced-cache.php (antes do WordPress carregar). */
+	/** Config used by advanced-cache.php (before WordPress loads). */
 	public static function cache_config() {
 		$s = self::all();
 		return array(
@@ -303,7 +330,7 @@ class Settings {
 		if ( ! wp_mkdir_p( FAST_WP_CACHE_DIR ) ) {
 			return false;
 		}
-		$code = "<?php\ndefined( 'ABSPATH' ) || exit;\n// Gerado pelo Fast WP. Não edite: é recriado ao salvar as opções.\nreturn " . var_export( self::cache_config(), true ) . ";\n"; // phpcs:ignore
+		$code = "<?php\ndefined( 'ABSPATH' ) || exit;\n// Generated by Fast WP. Do not edit: it is rewritten when settings are saved.\nreturn " . var_export( self::cache_config(), true ) . ";\n"; // phpcs:ignore
 		$file = FAST_WP_CACHE_DIR . '/config.php';
 		$tmp  = $file . '.tmp';
 		if ( false === file_put_contents( $tmp, $code ) ) { // phpcs:ignore
@@ -312,7 +339,7 @@ class Settings {
 		return rename( $tmp, $file );
 	}
 
-	/** Assinatura das opções que mudam o resultado das otimizações (usada nos nomes dos arquivos gerados). */
+	/** Signature of the settings that change optimization output (used in generated file names). */
 	public static function signature() {
 		$s    = self::all();
 		$keys = array( 'minify_css', 'fonts_swap', 'webp_serve', 'cdn_enabled', 'cdn_url', 'minify_js' );
@@ -323,8 +350,9 @@ class Settings {
 		return substr( md5( FAST_WP_VERSION . wp_json_encode( $sig ) ), 0, 8 );
 	}
 
-	/** Usado nos testes automatizados. */
+	/** Used by the automated tests. */
 	public static function reset_cache() {
 		self::$cache = null;
+		I18n::reset();
 	}
 }

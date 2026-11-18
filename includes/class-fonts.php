@@ -1,6 +1,6 @@
 <?php
 /**
- * Google Fonts no próprio site + font-display: swap + pré-carregamento da fonte principal.
+ * Self-hosted Google Fonts + font-display: swap + preload of the main font.
  *
  * @package FastWP
  */
@@ -13,10 +13,10 @@ class Fonts {
 
 	const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 
-	/** Subconjuntos baixados para o servidor. Os outros continuam vindo do Google, se forem usados. */
+	/** Subsets downloaded to the server. Others still come from Google if used. */
 	const LOCAL_SUBSETS = array( 'latin', 'latin-ext' );
 
-	/** @var string[] Tags de preload para o <head>. */
+	/** @var string[] Preload tags for the <head>. */
 	public $preloads = array();
 
 	/** @var float */
@@ -52,7 +52,7 @@ class Fonts {
 			$html
 		);
 
-		// Sem nenhum link do Google sobrando, as conexões antecipadas não servem mais.
+		// With no Google link left, the early connections are useless.
 		if ( $localized && false === stripos( $html, 'fonts.googleapis.com/css' ) ) {
 			$html = preg_replace( '#<link\b[^>]*rel=["\']?(?:preconnect|dns-prefetch)["\']?[^>]*fonts\.(?:googleapis|gstatic)\.com[^>]*>\s*#i', '', $html );
 			$html = preg_replace( '#<link\b[^>]*fonts\.(?:googleapis|gstatic)\.com[^>]*rel=["\']?(?:preconnect|dns-prefetch)["\']?[^>]*>\s*#i', '', $html );
@@ -65,7 +65,7 @@ class Fonts {
 	}
 
 	/**
-	 * Baixa o CSS e as fontes (latin) do Google e devolve o endereço local.
+	 * Downloads the CSS and (latin) fonts from Google and returns the local URL.
 	 *
 	 * @return array|null ['url' => ..., 'preload' => [...]]
 	 */
@@ -88,7 +88,7 @@ class Fonts {
 		if ( get_transient( 'fast_wp_gf_fail_' . $key ) ) {
 			return null;
 		}
-		// Limite de tempo: nunca segura a página por mais de 15 segundos baixando fontes.
+		// Time limit: never hold the page for more than 15 seconds downloading fonts.
 		if ( microtime( true ) - $this->started > 15 ) {
 			return null;
 		}
@@ -152,7 +152,7 @@ class Fonts {
 		return $data;
 	}
 
-	/** Baixa um arquivo de fonte do Google e devolve a URL local. */
+	/** Downloads a Google font file and returns its local URL. */
 	private function download( $url, $dir ) {
 		$ext  = preg_match( '#\.(woff2|woff|ttf|otf)(\?|$)#i', $url, $m ) ? strtolower( $m[1] ) : 'woff2';
 		$name = substr( md5( $url ), 0, 16 ) . '.' . $ext;
@@ -179,7 +179,7 @@ class Fonts {
 		return Assets::url( 'fonts/' . $name );
 	}
 
-	/** Garante font-display: swap em todos os @font-face de um CSS. */
+	/** Ensures font-display: swap on every @font-face of a CSS. */
 	public static function swap( $css ) {
 		if ( false === stripos( $css, '@font-face' ) ) {
 			return $css;

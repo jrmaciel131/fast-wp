@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       Fast WP
- * Description:       Cache de página e otimizações de desempenho sem versão paga: CSS não usado, atraso de JS, lazy load, imagem principal (LCP), Google Fonts local, WebP, limpeza e banco de dados. Feito para sites com Elementor.
+ * Description:       Page cache and performance optimizations with no paid tier: unused CSS removal, delayed JS, lazy load, main image (LCP), self-hosted Google Fonts, WebP, cleanup and database. Built for Elementor sites.
  * Version:           0.1.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
@@ -20,14 +20,15 @@ define( 'FAST_WP_URL', plugin_dir_url( __FILE__ ) );
 define( 'FAST_WP_CACHE_DIR', WP_CONTENT_DIR . '/cache/fast-wp' );
 
 /*
- * Repositório do GitHub usado para as atualizações automáticas, no formato "usuario/repositorio".
- * Também pode ser definido na aba Avançado ou no wp-config.php com define( 'FAST_WP_GITHUB_REPO', '...' ).
+ * GitHub repository used for automatic updates, as "owner/repository".
+ * It can also be set in the Advanced tab or in wp-config.php with define( 'FAST_WP_GITHUB_REPO', '...' ).
  */
 if ( ! defined( 'FAST_WP_GITHUB_REPO' ) ) {
 	define( 'FAST_WP_GITHUB_REPO', '' );
 }
 
 require_once FAST_WP_DIR . 'includes/class-request.php';
+require_once FAST_WP_DIR . 'includes/class-i18n.php';
 require_once FAST_WP_DIR . 'includes/class-settings.php';
 require_once FAST_WP_DIR . 'includes/class-html.php';
 require_once FAST_WP_DIR . 'includes/class-minify.php';

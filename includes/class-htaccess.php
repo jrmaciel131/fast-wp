@@ -1,7 +1,7 @@
 <?php
 /**
- * Regras do .htaccess (Apache/LiteSpeed): cache servido direto, GZIP e cache do navegador.
- * O bloco fica sempre ANTES das regras do WordPress e é removido ao desativar o plugin.
+ * .htaccess rules (Apache/LiteSpeed): cache served directly, GZIP and browser caching.
+ * The block always sits BEFORE the WordPress rules and is removed when the plugin is deactivated.
  *
  * @package FastWP
  */
@@ -22,12 +22,12 @@ class Htaccess {
 			update_option( 'fast_wp_server_apache', $apache ? 1 : 0, false );
 			return $apache;
 		}
-		// Linha de comando (WP-CLI) ou cron sem servidor: usa o que foi visto numa visita anterior.
+		// Command line (WP-CLI) or cron without a server: use what a previous visit saw.
 		$known = get_option( 'fast_wp_server_apache', null );
 		if ( null !== $known && false !== $known ) {
 			return (bool) $known;
 		}
-		// Sem informação: um .htaccess com as regras do WordPress indica Apache/LiteSpeed.
+		// No information: a .htaccess with WordPress rules means Apache/LiteSpeed.
 		if ( ! function_exists( 'get_home_path' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
@@ -39,7 +39,7 @@ class Htaccess {
 		return get_home_path() . '.htaccess';
 	}
 
-	/** Grava (ou remove) o bloco conforme as opções. */
+	/** Writes (or removes) the block according to the settings. */
 	public static function sync() {
 		if ( ! function_exists( 'get_home_path' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -56,7 +56,7 @@ class Htaccess {
 		return self::write_block( '' );
 	}
 
-	/** Coloca o bloco no topo do .htaccess, antes de "# BEGIN WordPress". */
+	/** Puts the block at the top of .htaccess, before "# BEGIN WordPress". */
 	private static function write_block( $rules ) {
 		$file = self::path();
 		if ( ! file_exists( $file ) ) {
@@ -78,10 +78,10 @@ class Htaccess {
 		return false !== file_put_contents( $file, $new, LOCK_EX ); // phpcs:ignore
 	}
 
-	/** Monta as regras. */
+	/** Builds the rules. */
 	public static function rules() {
 		$s   = Settings::all();
-		$out = array( '# Regras do plugin Fast WP. Não edite entre estas linhas.' );
+		$out = array( '# Rules from the Fast WP plugin. Do not edit between these lines.' );
 
 		if ( ! empty( $s['webp_serve'] ) ) {
 			$out[] = '<IfModule mod_mime.c>';
@@ -122,7 +122,7 @@ class Htaccess {
 		return count( $out ) > 1 ? implode( "\n", $out ) : '';
 	}
 
-	/** Regras que entregam o arquivo do cache sem passar pelo PHP. */
+	/** Rules that serve the cache file without going through PHP. */
 	private static function cache_rules( array $s ) {
 		$home     = wp_parse_url( home_url( '/' ) );
 		$base     = isset( $home['path'] ) ? rtrim( $home['path'], '/' ) . '/' : '/';
@@ -153,14 +153,14 @@ class Htaccess {
 		$out[] = '<IfModule mod_rewrite.c>';
 		$out[] = 'RewriteEngine On';
 		$out[] = 'RewriteBase ' . $base;
-		// Versão comprimida (.gz).
+		// Compressed version (.gz).
 		$out[] = '<IfModule mod_mime.c>';
 		$out   = array_merge( $out, $conds );
 		$out[] = 'RewriteCond %{HTTP:Accept-Encoding} gzip';
 		$out[] = 'RewriteCond "' . $cache_fs . '/%{HTTP_HOST}%{REQUEST_URI}index' . $suffix . '.html.gz" -f';
 		$out[] = 'RewriteRule .* "' . $cache_url . '/%{HTTP_HOST}%{REQUEST_URI}index' . $suffix . '.html.gz" [L]';
 		$out[] = '</IfModule>';
-		// Versão normal.
+		// Plain version.
 		$out   = array_merge( $out, $conds );
 		$out[] = 'RewriteCond "' . $cache_fs . '/%{HTTP_HOST}%{REQUEST_URI}index' . $suffix . '.html" -f';
 		$out[] = 'RewriteRule .* "' . $cache_url . '/%{HTTP_HOST}%{REQUEST_URI}index' . $suffix . '.html" [L]';
@@ -168,7 +168,7 @@ class Htaccess {
 		return $out;
 	}
 
-	/** .htaccess dentro da pasta do cache: cabeçalhos corretos para HTML e .gz. */
+	/** .htaccess inside the cache folder: correct headers for HTML and .gz. */
 	public static function write_pages_htaccess() {
 		$dir = FAST_WP_CACHE_DIR . '/pages';
 		if ( ! wp_mkdir_p( $dir ) ) {

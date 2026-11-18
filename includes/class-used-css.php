@@ -1,12 +1,12 @@
 <?php
 /**
- * Remove o CSS que a página não usa.
+ * Removes the CSS the page does not use.
  *
- * Como funciona: lê todas as palavras do HTML (classes, ids, textos de scripts e data-settings do
- * Elementor) e só mantém as regras cujos seletores usam classes e ids que aparecem na página.
- * Regras com casos difíceis (escapes, seletores estranhos) são mantidas por segurança.
- * Classes que o JavaScript adiciona depois (menus, popups, sliders, animações do Elementor)
- * ficam numa lista segura.
+ * How it works: reads every word of the HTML (classes, ids, script text and Elementor
+ * data-settings) and only keeps rules whose selectors use classes and ids found on the page.
+ * Rules with hard cases (escapes, odd selectors) are kept to be safe.
+ * Classes added later by JavaScript (menus, popups, sliders, Elementor animations)
+ * are on a safelist.
  *
  * @package FastWP
  */
@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Used_Css {
 
-	/** Prefixos e padrões de classes adicionadas por JavaScript (Elementor, Swiper, menus). */
+	/** Prefixes and patterns of classes added by JavaScript (Elementor, Swiper, menus). */
 	const SAFE_PATTERNS = array(
 		'^e--ua-', '^elementor-sticky', '^elementor-motion-effects', '^elementor-popup', '^dialog-',
 		'^elementor-lightbox', '^swiper', '^elementor-swiper', '^elementor-slide', '^elementor-active',
@@ -33,7 +33,7 @@ class Used_Css {
 		'-loaded$', '-loading$', '-sticky$', '-scrolled$', '-fixed$', '-selected$', '-focus$', '-hover$',
 	);
 
-	/** Classes de estado comuns, adicionadas por JavaScript. */
+	/** Common state classes added by JavaScript. */
 	const SAFE_WORDS = array(
 		'active', 'open', 'opened', 'show', 'showing', 'shown', 'visible', 'hidden', 'hide', 'current',
 		'selected', 'focus', 'focused', 'expanded', 'collapsed', 'sticky', 'fixed', 'scrolled', 'loaded',
@@ -43,21 +43,21 @@ class Used_Css {
 		'animated', 'elementor-invisible', 'elementor-active', 'elementor-item-active',
 	);
 
-	/** @var array Palavras encontradas no HTML. */
+	/** @var array Words found in the HTML. */
 	private $words = array();
 
-	/** @var string Regex única com os padrões seguros. */
+	/** @var string Single regex with the safe patterns. */
 	private $pattern = '';
 
 	/** @var array */
 	private $memo = array();
 
 	/**
-	 * @param string   $html     HTML completo da página.
-	 * @param string[] $safelist Regras extras (exata, prefixo* ou /regex/).
+	 * @param string   $html     Full HTML of the page.
+	 * @param string[] $safelist Extra rules (exact, prefix* or /regex/).
 	 */
 	public function __construct( $html, array $safelist = array() ) {
-		// O próprio CSS dentro de <style> não conta como "uso".
+		// CSS inside <style> itself does not count as "usage".
 		$text = preg_replace( '#<style\b[^>]*>.*?</style\s*>#is', ' ', $html );
 		if ( preg_match_all( '/-?[A-Za-z_][A-Za-z0-9_-]*/', (string) $text, $m ) ) {
 			$this->words = array_fill_keys( $m[0], true );
@@ -86,7 +86,7 @@ class Used_Css {
 		$this->pattern = '/' . implode( '|', $patterns ) . '/';
 	}
 
-	/** True se a palavra (classe ou id) aparece na página ou está na lista segura. */
+	/** True when the word (class or id) is on the page or on the safelist. */
 	public function has( $token ) {
 		if ( isset( $this->words[ $token ] ) ) {
 			return true;
@@ -97,14 +97,14 @@ class Used_Css {
 		return $this->memo[ $token ];
 	}
 
-	/** True se o seletor pode casar com algo na página. Na dúvida, mantém. */
+	/** True when the selector may match something on the page. When in doubt, keep it. */
 	public function selector_used( $sel ) {
 		$s = trim( $sel );
 		if ( '' === $s ) {
 			return false;
 		}
 		if ( false !== strpos( $s, '\\' ) ) {
-			return true; // Classes com caracteres escapados: mantém.
+			return true; // Classes with escaped characters: keep.
 		}
 		$s = (string) preg_replace( '/\[[^\]]*\]/', ' ', $s );
 		$s = self::strip_functional_pseudos( $s );
@@ -120,7 +120,7 @@ class Used_Css {
 		return true;
 	}
 
-	/** Remove :not(...), :is(...), :where(...), :has(...) etc. (fica mais permissivo, nunca menos). */
+	/** Removes :not(...), :is(...), :where(...), :has(...) etc. (more permissive, never less). */
 	public static function strip_functional_pseudos( $s ) {
 		$guard = 0;
 		while ( $guard++ < 50 && preg_match( '/::?[a-zA-Z-]+\(/', $s, $m, PREG_OFFSET_CAPTURE ) ) {
@@ -142,7 +142,7 @@ class Used_Css {
 	}
 
 	/**
-	 * Primeira etapa: filtra as regras comuns. @font-face e @keyframes ficam para a etapa final.
+	 * First step: filters normal rules. @font-face and @keyframes are left for the final step.
 	 */
 	public function filter_rules( array $nodes ) {
 		$out = array();
@@ -161,7 +161,7 @@ class Used_Css {
 					break;
 				case 'group':
 					if ( preg_match( '/^@media\s+print\b/i', $n[1] ) ) {
-						break; // CSS de impressão não é necessário para abrir a página.
+						break; // Print CSS is not needed to render the page.
 					}
 					$children = $this->filter_rules( $n[2] );
 					if ( $children ) {
@@ -176,10 +176,10 @@ class Used_Css {
 	}
 
 	/**
-	 * Etapa final: mantém só as fontes e animações citadas no CSS que sobrou (de todos os arquivos).
+	 * Final step: keeps only the fonts and animations referenced by the remaining CSS (from every file).
 	 *
-	 * @param array  $nodes     Nós já filtrados.
-	 * @param string $reference CSS mantido de toda a página + estilos inline do HTML.
+	 * @param array  $nodes     Already filtered nodes.
+	 * @param string $reference CSS kept for the whole page + inline HTML styles.
 	 */
 	public static function filter_fonts_and_keyframes( array $nodes, $reference, array $opts = array() ) {
 		$out     = array();
@@ -213,10 +213,10 @@ class Used_Css {
 	}
 
 	/**
-	 * Decide se um @font-face precisa entrar no CSS inicial.
-	 * Fica de fora: alfabetos que não são latinos (cirílico, grego, vietnamita, símbolos),
-	 * pesos que a página não usa e itálico quando não há texto em itálico.
-	 * O CSS completo, carregado depois, traz tudo de volta.
+	 * Decides whether a @font-face belongs in the initial CSS.
+	 * Left out: non-Latin scripts (Cyrillic, Greek, Vietnamese, symbols),
+	 * weights the page does not use and italics when there is no italic text.
+	 * The full CSS, loaded later, brings everything back.
 	 */
 	public static function font_face_needed( $body, $weights, $italic ) {
 		if ( preg_match( '/unicode-range\s*:\s*([^;]+)/i', $body, $m ) ) {
@@ -225,7 +225,7 @@ class Used_Css {
 				if ( preg_match( '/U\+([0-9A-F?]+)(?:-([0-9A-F]+))?/i', trim( $range ), $r ) ) {
 					$from = hexdec( str_replace( '?', '0', $r[1] ) );
 					$to   = isset( $r[2] ) && '' !== $r[2] ? hexdec( $r[2] ) : hexdec( str_replace( '?', 'F', $r[1] ) );
-					if ( $from <= 0x7A && $to >= 0x41 ) { // Contém as letras A-z.
+					if ( $from <= 0x7A && $to >= 0x41 ) { // Contains the letters A-z.
 						$latin = true;
 						break;
 					}
@@ -251,7 +251,7 @@ class Used_Css {
 		return true;
 	}
 
-	/** Pesos de fonte usados no CSS e nos estilos da página (400 e 700 sempre entram). */
+	/** Font weights used in the page's CSS and styles (400 and 700 are always included). */
 	public static function font_weights( $reference ) {
 		$weights = array( 400 => true, 700 => true );
 		if ( preg_match_all( '/font-weight\s*:\s*([a-z0-9]+)/i', $reference, $m ) ) {
@@ -275,7 +275,7 @@ class Used_Css {
 		return array_keys( array_filter( $weights ) );
 	}
 
-	/** Texto usado como referência para fontes e animações (regras comuns, sem @font-face/@keyframes). */
+	/** Text used as a reference for fonts and animations (normal rules, no @font-face/@keyframes). */
 	public static function reference_text( array $nodes ) {
 		$out = '';
 		foreach ( $nodes as $n ) {
