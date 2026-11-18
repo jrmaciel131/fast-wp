@@ -1,0 +1,10 @@
+.git
+.github
+.claude
+.gitignore
+.distignore
+tests
+build
+*.zip
+bin
+.gitattributes

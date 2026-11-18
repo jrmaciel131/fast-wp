@@ -1,0 +1,5 @@
+build/
+*.zip
+.claude/
+tests/fixtures/
+tests/output/
