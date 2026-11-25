@@ -8,7 +8,7 @@
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       fast-wp
- * Update URI:        https://github.com/fast-wp/fast-wp
+ * Update URI:        https://github.com/jrmaciel131/fast-wp
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -24,7 +24,7 @@ define( 'FAST_WP_CACHE_DIR', WP_CONTENT_DIR . '/cache/fast-wp' );
  * It can also be set in the Advanced tab or in wp-config.php with define( 'FAST_WP_GITHUB_REPO', '...' ).
  */
 if ( ! defined( 'FAST_WP_GITHUB_REPO' ) ) {
-	define( 'FAST_WP_GITHUB_REPO', '' );
+	define( 'FAST_WP_GITHUB_REPO', 'jrmaciel131/fast-wp' );
 }
 
 require_once FAST_WP_DIR . 'includes/class-request.php';
