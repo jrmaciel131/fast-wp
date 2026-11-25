@@ -48,6 +48,13 @@ class Cache {
 				self::$optimize = $test_param || ! is_user_logged_in();
 			}
 		}
+		// Pages excluded from optimization (they can still be cached).
+		if ( self::$optimize ) {
+			$uri = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_unslash( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore
+			if ( Assets::matches( (string) strtok( $uri, '?' ), Settings::lines( 'optimize_exclude_urls' ) ) ) {
+				self::$optimize = false;
+			}
+		}
 
 		self::$target = null;
 		if ( ! empty( $s['cache_enabled'] ) && ! $test_param && self::page_is_cacheable() ) {
@@ -393,30 +400,50 @@ class Cache {
 		return ( file_exists( $up ) && ! file_exists( dirname( ABSPATH ) . '/wp-settings.php' ) ) ? $up : '';
 	}
 
-	/** Liga ou desliga a constante WP_CACHE no wp-config.php. */
+	/** Option that stores why WP_CACHE could not be enabled. */
+	const WPCONFIG_STATUS = 'fast_wp_wpconfig_status';
+
+	/**
+	 * Turns the WP_CACHE constant on or off in wp-config.php.
+	 * When turning it on, the reason for any failure is stored in WPCONFIG_STATUS:
+	 * not_found, not_writable, unexpected or write_failed.
+	 */
 	public static function set_wp_cache( $on ) {
 		$file = self::wp_config_path();
-		if ( ! $file || ! is_writable( $file ) ) {
-			return false;
+		if ( ! $file ) {
+			return self::wp_cache_status( $on, 'not_found' );
 		}
 		$code = (string) file_get_contents( $file ); // phpcs:ignore
-		if ( '' === $code ) {
-			return false;
+		if ( '' === $code || false === strpos( $code, 'wp-settings.php' ) || ! preg_match( '/^\s*<\?php/', $code ) ) {
+			return self::wp_cache_status( $on, 'unexpected' );
 		}
-		$line = "define( 'WP_CACHE', true ); " . self::CONFIG_MARK;
+		// Active (not commented out) WP_CACHE definitions.
+		$active_define = "/^(?!\s*(?:\/\/|#|\*|\/\*))[^\n]*define\s*\(\s*['\"]WP_CACHE['\"]\s*,[^\n]*$\R?/mi";
+
 		if ( $on ) {
-			if ( preg_match( "/define\s*\(\s*['\"]WP_CACHE['\"]\s*,\s*true\s*\)/i", $code ) ) {
-				return true;
+			if ( self::wp_cache_active() ) {
+				return self::wp_cache_status( true, '' );
 			}
-			$code = preg_replace( "/^.*define\s*\(\s*['\"]WP_CACHE['\"].*$\R?/mi", '', $code );
-			$code = preg_replace( '/^<\?php\s*/', "<?php\n" . $line . "\n", $code, 1 );
+			// Remove any other active definition (false, or true placed after wp-settings.php) and add ours at the top.
+			$code = preg_replace( $active_define, '', $code );
+			$code = preg_replace( '/^\s*<\?php[ \t]*\R?/', "<?php\ndefine( 'WP_CACHE', true ); " . self::CONFIG_MARK . "\n", $code, 1 );
 		} else {
 			$code = preg_replace( '/^.*' . preg_quote( self::CONFIG_MARK, '/' ) . '.*\R?/m', '', $code );
 		}
-		if ( false === strpos( $code, 'wp-settings.php' ) ) {
-			return false; // Unexpected content: do not write.
+		if ( ! is_writable( $file ) ) {
+			return self::wp_cache_status( $on, 'not_writable' );
 		}
-		return false !== file_put_contents( $file, $code, LOCK_EX ); // phpcs:ignore
+		if ( false === file_put_contents( $file, $code, LOCK_EX ) ) { // phpcs:ignore
+			return self::wp_cache_status( $on, 'write_failed' );
+		}
+		return self::wp_cache_status( $on, '' );
+	}
+
+	private static function wp_cache_status( $on, $error ) {
+		if ( $on ) {
+			update_option( self::WPCONFIG_STATUS, $error, false );
+		}
+		return '' === $error;
 	}
 
 	public static function wp_cache_active() {

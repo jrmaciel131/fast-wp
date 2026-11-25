@@ -16,9 +16,9 @@ class Updater {
 
 	const SLUG = 'fast-wp';
 
+	/** The project's repository (set in fast-wp.php; can be overridden in wp-config.php). */
 	public static function repo() {
-		$opt = (string) Settings::get( 'github_repo' );
-		return '' !== $opt ? $opt : (string) FAST_WP_GITHUB_REPO;
+		return (string) FAST_WP_GITHUB_REPO;
 	}
 
 	public static function init() {

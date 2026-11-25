@@ -156,6 +156,20 @@ $o = array();
 exec( 'node --check ' . escapeshellarg( $tmp ) . ' 2>&1', $o, $code );
 check( 0 === $code || 127 === $code, 'loader is valid JavaScript' . ( $code && 127 !== $code ? ': ' . implode( ' ', $o ) : '' ) );
 
+echo "\n== wp-config.php (WP_CACHE) ==\n";
+require_once FAST_WP_DIR . 'includes/class-cache.php';
+$wpconfig = ABSPATH . 'wp-config.php';
+file_put_contents( $wpconfig, "<?php\n// define( 'WP_CACHE', true );\ndefine( 'DB_NAME', 'x' );\nrequire_once ABSPATH . 'wp-settings.php';\ndefine( 'WP_CACHE', true );\n" );
+check( FastWP\Cache::set_wp_cache( true ), 'WP_CACHE written' );
+$cfgtxt = file_get_contents( $wpconfig );
+check( 0 === strpos( $cfgtxt, "<?php\ndefine( 'WP_CACHE', true ); // Fast WP\n" ), 'WP_CACHE moved to the top of wp-config.php' );
+check( 1 === preg_match_all( "/^define\( 'WP_CACHE'/m", $cfgtxt ), 'misplaced definition after wp-settings.php removed' );
+check( false !== strpos( $cfgtxt, "// define( 'WP_CACHE', true );" ), 'commented lines left alone' );
+check( FastWP\Cache::set_wp_cache( false ) && false === strpos( file_get_contents( $wpconfig ), '// Fast WP' ), 'deactivation removes only our line' );
+file_put_contents( $wpconfig, "<?php\n// nothing here\n" );
+check( ! FastWP\Cache::set_wp_cache( true ) && 'unexpected' === get_option( FastWP\Cache::WPCONFIG_STATUS ), 'unusual wp-config.php is not touched (reason stored)' );
+unlink( $wpconfig );
+
 echo "\n== Translations ==\n";
 fwp_set( array( 'language' => 'en_US' ) );
 check( 'Play video' === FastWP\t( 'Play video' ), 'English is the source language' );

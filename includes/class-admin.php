@@ -40,7 +40,34 @@ class Admin {
 		add_action( 'admin_post_fast_wp', array( __CLASS__, 'handle' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notices' ) );
 		add_action( 'admin_bar_menu', array( __CLASS__, 'admin_bar' ), 100 );
+		add_action( 'admin_head', array( __CLASS__, 'admin_bar_style' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( FAST_WP_FILE ), array( __CLASS__, 'action_links' ) );
+	}
+
+	/** Colors the "Fast WP" admin bar item: orange in test mode, red in safe mode. */
+	public static function admin_bar_style() {
+		if ( ! is_admin_bar_showing() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		echo '<style id="fwp-admin-bar">#wpadminbar #wp-admin-bar-fast-wp.fwp-bar-test>.ab-item{background:#dba617;color:#1d2327;font-weight:600}'
+			. '#wpadminbar #wp-admin-bar-fast-wp.fwp-bar-safe>.ab-item{background:#d63638;color:#fff;font-weight:600}'
+			. '#wpadminbar #wp-admin-bar-fast-wp.fwp-bar-live>.ab-item:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#00a32a;margin:0 6px 1px 0;vertical-align:middle}</style>';
+	}
+
+	/** Explains why WP_CACHE could not be enabled. */
+	public static function wp_cache_reason() {
+		switch ( (string) get_option( Cache::WPCONFIG_STATUS, '' ) ) {
+			case 'not_found':
+				return t( 'Reason: wp-config.php was not found in the usual places.' );
+			case 'not_writable':
+				return t( 'Reason: wp-config.php is read-only. Change its permission to 644 (in the host file manager or via FTP) and click "Try again".' );
+			case 'unexpected':
+				return t( 'Reason: wp-config.php has an unusual format, so it was not changed automatically.' );
+			case 'write_failed':
+				return t( 'Reason: the server refused to save wp-config.php.' );
+			default:
+				return t( 'The line may have been added after the WordPress loading line. Click "Try again" to fix it automatically.' );
+		}
 	}
 
 	public static function menu() {
@@ -150,6 +177,11 @@ class Admin {
 				spawn_cron();
 				$msg = t( 'WebP conversion started in the background.' );
 				break;
+			case 'fix_wp_cache':
+				$ok   = Cache::set_wp_cache( true );
+				$msg  = $ok ? t( 'WP_CACHE enabled in wp-config.php.' ) : self::wp_cache_reason();
+				$type = $ok ? 'success' : 'error';
+				break;
 			case 'dropin_force':
 				Cache::install_dropin( true );
 				$msg = t( 'advanced-cache.php replaced with the Fast WP one.' );
@@ -211,7 +243,13 @@ class Admin {
 			printf( '<div class="notice notice-%s is-dismissible"><p><strong>Fast WP:</strong> %s</p></div>', esc_attr( $n[0] ), esc_html( $n[1] ) );
 		}
 
-		$s = Settings::all();
+		$s       = Settings::all();
+		$on_page = isset( $_GET['page'] ) && self::PAGE === $_GET['page']; // phpcs:ignore
+		if ( $on_page ) {
+			// The Fast WP screen shows its own large banner instead.
+			$s['safe_mode'] = 0;
+			$s['test_mode'] = 0;
+		}
 		if ( ! empty( $s['safe_mode'] ) ) {
 			$test = get_option( Self_Test::OPTION );
 			printf(
@@ -227,7 +265,7 @@ class Admin {
 		} elseif ( ! empty( $s['test_mode'] ) ) {
 			$preview = add_query_arg( 'fwp_test', 1, home_url( '/' ) );
 			printf(
-				'<div class="notice notice-warning"><p><strong>%s</strong> %s <a href="%s" target="_blank">%s</a> · <a href="%s" target="_blank">%s</a> · <a href="%s"><strong>%s</strong></a></p></div>',
+				'<div class="notice notice-warning" style="border-left-width:6px"><p><strong>%s</strong> %s <a href="%s" target="_blank">%s</a> · <a href="%s" target="_blank">%s</a> &nbsp;<a class="button button-primary" href="%s">%s</a></p></div>',
 				esc_html( t( 'Fast WP is in test mode:' ) ),
 				esc_html( t( 'visitors do not get the optimizations yet. Preview:' ) ),
 				esc_url( $preview ),
@@ -235,7 +273,7 @@ class Admin {
 				esc_url( self::pagespeed_url( home_url( '/' ) ) ),
 				esc_html( t( 'test on PageSpeed' ) ),
 				esc_url( self::action_url( 'test_mode', array( 'on' => 0 ) ) ),
-				esc_html( t( 'go live for visitors' ) )
+				esc_html( t( 'Go live for visitors' ) )
 			);
 		}
 
@@ -253,8 +291,13 @@ class Admin {
 		}
 		if ( ! empty( $s['cache_enabled'] ) && ! Cache::wp_cache_active() && ! Cache::foreign_dropin() ) {
 			printf(
-				'<div class="notice notice-warning"><p><strong>Fast WP:</strong> %s <code>define( \'WP_CACHE\', true );</code></p></div>',
-				esc_html( t( 'could not enable the cache in wp-config.php (file not writable). Add this line right after <?php:' ) )
+				'<div class="notice notice-error"><p><strong>Fast WP: %s</strong> %s</p><p>%s</p><p><a class="button button-primary" href="%s">%s</a> &nbsp;%s <code>define( \'WP_CACHE\', true );</code></p></div>',
+				esc_html( t( 'WP_CACHE is not active in wp-config.php.' ) ),
+				esc_html( t( 'Without it, visitors coming from ads (links with utm, gclid or fbclid) do not get the cache.' ) ),
+				esc_html( self::wp_cache_reason() ),
+				esc_url( self::action_url( 'fix_wp_cache' ) ),
+				esc_html( t( 'Try again' ) ),
+				esc_html( t( 'If it keeps failing, add this line right after <?php in wp-config.php:' ) )
 			);
 		}
 		$err = get_option( Optimizer::ERROR_OPTION );
@@ -293,15 +336,35 @@ class Admin {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		$s     = Settings::all();
-		$title = 'Fast WP' . ( ! empty( $s['safe_mode'] ) ? ' (' . t( 'safe mode' ) . ')' : ( ! empty( $s['test_mode'] ) ? ' (' . t( 'test' ) . ')' : '' ) );
+		$s = Settings::all();
+		if ( ! empty( $s['safe_mode'] ) ) {
+			$state = 'safe';
+			$title = 'Fast WP: ' . t( 'SAFE MODE' );
+		} elseif ( ! empty( $s['test_mode'] ) ) {
+			$state = 'test';
+			$title = 'Fast WP: ' . t( 'TEST – not live' );
+		} else {
+			$state = 'live';
+			$title = 'Fast WP';
+		}
 		$bar->add_node(
 			array(
 				'id'    => 'fast-wp',
 				'title' => esc_html( $title ),
 				'href'  => admin_url( 'admin.php?page=' . self::PAGE ),
+				'meta'  => array( 'class' => 'fwp-bar-' . $state ),
 			)
 		);
+		if ( 'test' === $state ) {
+			$bar->add_node(
+				array(
+					'parent' => 'fast-wp',
+					'id'     => 'fast-wp-go-live',
+					'title'  => esc_html( t( 'Go live for visitors' ) ),
+					'href'   => self::action_url( 'test_mode', array( 'on' => 0 ) ),
+				)
+			);
+		}
 		$bar->add_node(
 			array(
 				'parent' => 'fast-wp',
@@ -350,6 +413,7 @@ class Admin {
 		}
 		echo '<div class="wrap fwp-wrap"><h1>Fast WP <small style="font-size:13px;color:#666">' . esc_html( t( 'version %s', FAST_WP_VERSION ) ) . '</small></h1>';
 		self::styles();
+		self::mode_banner();
 		echo '<nav class="nav-tab-wrapper">';
 		$tabs = array_merge( array( 'painel' => t( 'Dashboard' ) ), wp_list_pluck( $fields, 'title' ) );
 		foreach ( $tabs as $key => $label ) {
@@ -370,8 +434,37 @@ class Admin {
 		echo '</div>';
 	}
 
+	/** Large banner at the top of every Fast WP tab saying whether visitors get the optimizations. */
+	private static function mode_banner() {
+		$s = Settings::all();
+		if ( ! empty( $s['safe_mode'] ) ) {
+			printf(
+				'<div class="fwp-banner fwp-banner-safe"><div><strong>%s</strong><span>%s</span></div><a class="button button-hero" href="%s">%s</a></div>',
+				esc_html( t( 'Safe mode: optimizations are OFF for everyone' ) ),
+				esc_html( t( 'The self-test found a problem after an update. The cache keeps working. Run the self-test again before turning safe mode off.' ) ),
+				esc_url( self::action_url( 'self_test' ) ),
+				esc_html( t( 'Run self-test' ) )
+			);
+		} elseif ( ! empty( $s['test_mode'] ) ) {
+			printf(
+				'<div class="fwp-banner fwp-banner-test"><div><strong>%s</strong><span>%s</span></div><a class="button button-primary button-hero" href="%s">%s</a></div>',
+				esc_html( t( 'Test mode: visitors are NOT getting the optimizations yet' ) ),
+				esc_html( t( 'Only you see the optimized site, by adding ?fwp_test=1 to the address. When everything looks right, go live.' ) ),
+				esc_url( self::action_url( 'test_mode', array( 'on' => 0 ) ) ),
+				esc_html( t( 'Go live for visitors' ) )
+			);
+		} else {
+			printf(
+				'<div class="fwp-banner fwp-banner-live"><div><strong>%s</strong><span>%s</span></div></div>',
+				esc_html( t( 'Live: optimizations are active for every visitor' ) ),
+				esc_html( t( 'Logged-in administrators see the normal site. Use ?fwp_test=1 to see the optimized version.' ) )
+			);
+		}
+	}
+
 	private static function styles() {
-		echo '<style>.fwp-wrap .fwp-box{background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:16px 20px;margin:16px 0;max-width:980px}.fwp-wrap .fwp-box h2{margin-top:0}.fwp-wrap .fwp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px 24px}.fwp-ok{color:#008a20;font-weight:600}.fwp-bad{color:#d63638;font-weight:600}.fwp-warn{color:#b26200;font-weight:600}.fwp-wrap .form-table th{width:300px}.fwp-wrap .description{max-width:640px}.fwp-btns .button{margin:0 6px 6px 0}</style>';
+		echo '<style>.fwp-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;max-width:980px;box-sizing:border-box;margin:16px 0;padding:16px 20px;border-radius:6px;border-left:6px solid}.fwp-banner strong{display:block;font-size:16px;margin-bottom:4px}.fwp-banner span{color:#3c434a}.fwp-banner-test{background:#fcf0d0;border-color:#dba617}.fwp-banner-safe{background:#fcf0f1;border-color:#d63638}.fwp-banner-live{background:#edfaef;border-color:#00a32a}'
+			. '.fwp-wrap .fwp-box{background:#fff;border:1px solid #dcdcde;border-radius:6px;padding:16px 20px;margin:16px 0;max-width:980px}.fwp-wrap .fwp-box h2{margin-top:0}.fwp-wrap .fwp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px 24px}.fwp-ok{color:#008a20;font-weight:600}.fwp-bad{color:#d63638;font-weight:600}.fwp-warn{color:#b26200;font-weight:600}.fwp-wrap .form-table th{width:300px}.fwp-wrap .description{max-width:640px}.fwp-btns .button{margin:0 6px 6px 0}</style>';
 	}
 
 	private static function status_line( $label, $state, $text ) {
@@ -507,8 +600,8 @@ class Admin {
 			self::render_webp_box();
 		} elseif ( 'banco' === $tab ) {
 			self::render_db_box();
-		} elseif ( 'avancado' === $tab ) {
-			self::render_advanced_box();
+		} elseif ( 'geral' === $tab ) {
+			self::render_general_box();
 		}
 	}
 
@@ -546,17 +639,13 @@ class Admin {
 		echo '<p class="description">' . esc_html( t( 'Deleted items cannot be recovered. Make a backup first if in doubt.' ) ) . '</p></div>';
 	}
 
-	private static function render_advanced_box() {
-		$rel = Updater::repo() ? Updater::latest() : null;
+	private static function render_general_box() {
+		$rel = Updater::latest();
 		echo '<div class="fwp-box fwp-btns"><h2>' . esc_html( t( 'Updates' ) ) . '</h2>';
-		if ( ! Updater::repo() ) {
-			echo '<p class="fwp-warn">' . esc_html( t( 'No GitHub repository set. Fill in the field above to receive automatic updates.' ) ) . '</p>';
-		} else {
-			printf(
-				'<p>%s</p>',
-				esc_html( t( 'Repository: %1$s · installed version: %2$s · latest on GitHub: %3$s', Updater::repo(), FAST_WP_VERSION, $rel ? $rel['version'] : t( 'not checked' ) ) )
-			);
-		}
+		printf(
+			'<p>%s</p>',
+			esc_html( t( 'Installed version: %1$s · latest available: %2$s', FAST_WP_VERSION, $rel ? $rel['version'] : t( 'not checked' ) ) )
+		);
 		printf( '<a class="button" href="%s">%s</a>', esc_url( self::action_url( 'check_update' ) ), esc_html( t( 'Check for updates now' ) ) );
 		echo '</div>';
 

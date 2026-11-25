@@ -35,13 +35,13 @@ Recommended in Elementor (Elementor > Settings > Features): enable "Lazy Load Ba
 
 ## Language
 
-The plugin follows the WordPress language by default. To force a language, go to **Fast WP > Advanced > Plugin language**. Translations live in `languages/{locale}.php`; to add a language, copy `languages/pt_BR.php`, translate the values and add the locale to `I18n::LANGUAGES`.
+The plugin follows the WordPress language by default. To force a language, go to **Fast WP > General > Plugin language**. Translations live in `languages/{locale}.php`; to add a language, copy `languages/pt_BR.php`, translate the values and add the locale to `I18n::LANGUAGES`.
 
 ## Updates from GitHub
 
 Sites only update when a new **release** is published (a `v*` tag). A regular commit does not update anything.
 
-1. In **Fast WP > Advanced**, the repository field must point to `owner/repository` (or set `FAST_WP_GITHUB_REPO` in `fast-wp.php`).
+1. The repository is set in `FAST_WP_GITHUB_REPO` in `fast-wp.php` (this project: `jrmaciel131/fast-wp`). In **Fast WP > General** you choose the update channel and turn automatic updates on or off.
 2. To ship a version: change the version in the header and in `FAST_WP_VERSION` in `fast-wp.php`, commit, then push a tag:
    - `v0.2.0-beta.1` → pre-release: only sites on the **Beta** channel get it.
    - `v0.2.0` → stable: every site gets it.

@@ -25,6 +25,40 @@ class Settings {
 	 */
 	public static function fields() {
 		return array(
+			'geral'      => array(
+				'title'  => t( 'General' ),
+				'fields' => array(
+					'test_mode'             => array(
+						'select',
+						1,
+						t( 'Mode' ),
+						t( 'In test mode only you see the optimized site (with ?fwp_test=1). Switch to live when the tests look right.' ),
+						array(
+							1 => t( 'Test: visitors do NOT get the optimizations' ),
+							0 => t( 'Live: optimizations active for every visitor' ),
+						),
+					),
+					'optimize_exclude_urls' => array( 'textarea', '', t( 'Do not optimize these URLs' ), t( 'One URL fragment per line, for example /checkout/. These pages keep the cache but skip CSS, JS and image optimizations. Use it if one page looks broken.' ) ),
+					'language'              => array(
+						'select',
+						'auto',
+						t( 'Plugin language' ),
+						t( 'Language of the Fast WP screens.' ),
+						array_merge( array( 'auto' => t( 'Automatic (WordPress language)' ) ), I18n::LANGUAGES ),
+					),
+					'auto_update'           => array( 'checkbox', 1, t( 'Update the plugin automatically' ), t( 'New versions are installed automatically within about a day.' ) ),
+					'update_channel'        => array(
+						'select',
+						'stable',
+						t( 'Update channel' ),
+						t( 'Use "Beta" on a test site to receive new versions before the other sites.' ),
+						array(
+							'stable' => t( 'Stable' ),
+							'beta'   => t( 'Beta (receives pre-releases)' ),
+						),
+					),
+				),
+			),
 			'cache'      => array(
 				'title'  => t( 'Cache' ),
 				'fields' => array(
@@ -134,37 +168,12 @@ class Settings {
 					'db_weekly' => array( 'checkbox', 0, t( 'Clean the database automatically every week' ), t( 'Revisions, auto-drafts, trash, spam and expired transients.' ) ),
 				),
 			),
-			'avancado'   => array(
-				'title'  => t( 'Advanced' ),
-				'fields' => array(
-					'language'       => array(
-						'select',
-						'auto',
-						t( 'Plugin language' ),
-						t( 'Language of the Fast WP screens.' ),
-						array_merge( array( 'auto' => t( 'Automatic (WordPress language)' ) ), I18n::LANGUAGES ),
-					),
-					'auto_update'    => array( 'checkbox', 1, t( 'Update the plugin automatically from GitHub' ), '' ),
-					'update_channel' => array(
-						'select',
-						'stable',
-						t( 'Update channel' ),
-						t( 'Use "Beta" on a test site to receive new versions before the other sites.' ),
-						array(
-							'stable' => t( 'Stable' ),
-							'beta'   => t( 'Beta (receives pre-releases)' ),
-						),
-					),
-					'github_repo'    => array( 'text', '', t( 'GitHub repository' ), t( 'Format owner/repository. Empty = use the one set in the code.' ) ),
-				),
-			),
 		);
 	}
 
 	/** Internal values that are not shown as fields. */
 	private static function internal_defaults() {
 		return array(
-			'test_mode' => 1,
 			'safe_mode' => 0,
 		);
 	}
@@ -277,7 +286,7 @@ class Settings {
 					$out[ $key ] = max( 0, (int) $val );
 					break;
 				case 'select':
-					$out[ $key ] = isset( $f[4][ $val ] ) ? $val : $f[1];
+					$out[ $key ] = isset( $f[4][ $val ] ) ? ( is_int( $f[1] ) ? (int) $val : $val ) : $f[1];
 					break;
 				case 'textarea':
 					$out[ $key ] = sanitize_textarea_field( (string) $val );
@@ -288,9 +297,6 @@ class Settings {
 		}
 		if ( isset( $out['cdn_url'] ) ) {
 			$out['cdn_url'] = untrailingslashit( esc_url_raw( $out['cdn_url'] ) );
-		}
-		if ( isset( $out['github_repo'] ) ) {
-			$out['github_repo'] = preg_match( '#^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$#', $out['github_repo'] ) ? $out['github_repo'] : '';
 		}
 		return $out;
 	}

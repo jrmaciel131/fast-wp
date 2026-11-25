@@ -35,13 +35,13 @@ Recomendado no Elementor (Elementor > Configurações > Recursos): ativar "Lazy 
 
 ## Idioma
 
-O plugin segue o idioma do WordPress por padrão. Para escolher outro, vá em **Fast WP > Avançado > Idioma do plugin**. As traduções ficam em `languages/{locale}.php`; para adicionar um idioma, copie o `languages/pt_BR.php`, traduza os valores e inclua o idioma em `I18n::LANGUAGES`.
+O plugin segue o idioma do WordPress por padrão. Para escolher outro, vá em **Fast WP > Geral > Idioma do plugin**. As traduções ficam em `languages/{locale}.php`; para adicionar um idioma, copie o `languages/pt_BR.php`, traduza os valores e inclua o idioma em `I18n::LANGUAGES`.
 
 ## Atualizações pelo GitHub
 
 Os sites só atualizam quando uma nova **versão** é publicada (tag `v*`). Um commit comum não atualiza nada.
 
-1. Em **Fast WP > Avançado**, o campo do repositório precisa apontar para `usuario/repositorio` (ou defina `FAST_WP_GITHUB_REPO` no `fast-wp.php`).
+1. O repositório fica definido em `FAST_WP_GITHUB_REPO` no `fast-wp.php` (neste projeto: `jrmaciel131/fast-wp`). Em **Fast WP > Geral** você escolhe o canal e liga ou desliga a atualização automática.
 2. Para lançar uma versão: mude a versão no cabeçalho e em `FAST_WP_VERSION` do `fast-wp.php`, faça o commit e envie uma tag:
    - `v0.2.0-beta.1` → pré-lançamento: só os sites no canal **Teste** recebem.
    - `v0.2.0` → versão estável: todos os sites recebem.
