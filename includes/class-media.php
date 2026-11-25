@@ -28,12 +28,13 @@ class Media {
 		$skip      = (int) Settings::get( 'lazy_skip' );
 		$lcp       = (bool) Settings::get( 'lcp_priority' );
 		$webp      = (bool) Settings::get( 'webp_serve' );
+		$dims      = (bool) Settings::get( 'image_dimensions' );
 		$lcp_index = $lcp ? $this->find_lcp_index( $html ) : -1;
 
 		$index = -1;
 		$html  = preg_replace_callback(
 			'#<img\b[^>]*>#i',
-			function ( $m ) use ( &$index, $lazy, $skip, $lcp_index, $webp ) {
+			function ( $m ) use ( &$index, $lazy, $skip, $lcp_index, $webp, $dims ) {
 				$index++;
 				$tag   = $m[0];
 				$attrs = Html::attrs( $tag );
@@ -43,6 +44,11 @@ class Media {
 				$class   = isset( $attrs['class'] ) ? (string) $attrs['class'] : '';
 				$no_lazy = isset( $attrs['data-no-lazy'] ) || isset( $attrs['data-skip-lazy'] ) || preg_match( '/\b(skip-lazy|no-lazy)\b/', $class );
 				$changed = false;
+
+				// Missing width/height: the browser cannot reserve space and the page jumps (CLS).
+				if ( $dims && ( empty( $attrs['width'] ) || empty( $attrs['height'] ) ) && $this->add_dimensions( $attrs ) ) {
+					$changed = true;
+				}
 
 				if ( $webp ) {
 					if ( ! empty( $attrs['src'] ) ) {
@@ -144,6 +150,61 @@ class Media {
 			return $i;
 		}
 		return -1;
+	}
+
+	/** @var bool Whether any image got width/height added (needs the small height:auto CSS). */
+	public $added_dimensions = false;
+
+	/** @var array Cached image sizes by file path. */
+	private static $size_memo = array();
+
+	/**
+	 * Fills in width/height from the image file on the server (local images only).
+	 * Keeps the proportion when only one of the two is set.
+	 */
+	private function add_dimensions( array &$attrs ) {
+		$src = Html::decoded( $attrs, 'src' );
+		if ( '' === $src || 0 === stripos( $src, 'data:' ) ) {
+			return false;
+		}
+		$path = Assets::url_to_path( preg_replace( '/[?#].*$/', '', $src ) );
+		if ( ! $path ) {
+			return false;
+		}
+		if ( ! isset( self::$size_memo[ $path ] ) ) {
+			$size = false;
+			if ( preg_match( '/\.svg$/i', $path ) ) {
+				$svg = (string) @file_get_contents( $path, false, null, 0, 2048 ); // phpcs:ignore
+				if ( preg_match( '/viewBox\s*=\s*["\'][\d.\-]+[\s,]+[\d.\-]+[\s,]+([\d.]+)[\s,]+([\d.]+)/i', $svg, $vb ) ) {
+					$size = array( (int) round( $vb[1] ), (int) round( $vb[2] ) );
+				}
+			} else {
+				$info = @getimagesize( $path ); // phpcs:ignore
+				if ( $info && $info[0] > 0 && $info[1] > 0 ) {
+					$size = array( (int) $info[0], (int) $info[1] );
+				}
+			}
+			self::$size_memo[ $path ] = $size;
+		}
+		$size = self::$size_memo[ $path ];
+		if ( ! $size || $size[0] < 1 || $size[1] < 1 ) {
+			return false;
+		}
+		$w = isset( $attrs['width'] ) ? (int) $attrs['width'] : 0;
+		$h = isset( $attrs['height'] ) ? (int) $attrs['height'] : 0;
+		if ( $w > 0 && $h < 1 ) {
+			$h = (int) round( $w * $size[1] / $size[0] );
+		} elseif ( $h > 0 && $w < 1 ) {
+			$w = (int) round( $h * $size[0] / $size[1] );
+		} else {
+			$w = $size[0];
+			$h = $size[1];
+		}
+		$attrs['width']        = (string) $w;
+		$attrs['height']       = (string) $h;
+		$attrs['data-fwp-dim'] = true;
+		$this->added_dimensions = true;
+		return true;
 	}
 
 	private function add_lcp_preload( array $attrs ) {

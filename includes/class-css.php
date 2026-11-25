@@ -28,7 +28,26 @@ class Css {
 			return $html;
 		}
 
-		// 1) Read every local stylesheet.
+		// 0) The same stylesheet linked twice: keep only the first one.
+		$seen = array();
+		$html = preg_replace_callback(
+			'#<link\b[^>]*>#i',
+			function ( $m ) use ( &$seen ) {
+				$attrs = Html::attrs( $m[0] );
+				if ( empty( $attrs['href'] ) || 'stylesheet' !== strtolower( trim( (string) ( isset( $attrs['rel'] ) ? $attrs['rel'] : '' ) ) ) ) {
+					return $m[0];
+				}
+				$key = preg_replace( '#^https?:#i', '', Html::decoded( $attrs, 'href' ) ) . '|' . ( isset( $attrs['media'] ) ? $attrs['media'] : 'all' );
+				if ( isset( $seen[ $key ] ) ) {
+					return '';
+				}
+				$seen[ $key ] = true;
+				return $m[0];
+			},
+			$html
+		);
+
+		// 1) Read every local stylesheet (and those on well-known public CDNs).
 		$sheets = array();
 		if ( preg_match_all( '#<link\b[^>]*>#i', $html, $links, PREG_OFFSET_CAPTURE ) ) {
 			foreach ( $links[0] as $l ) {
@@ -43,10 +62,13 @@ class Css {
 				}
 				$href = Html::decoded( $attrs, 'href' );
 				$path = Assets::url_to_path( preg_replace( '/[?#].*$/', '', $href ) );
-				if ( ! $path || ! preg_match( '/\.css$/i', $path ) ) {
+				if ( $path && preg_match( '/\.css$/i', $path ) ) {
+					$css = $this->load( $path, $href );
+				} elseif ( ! $path && self::is_public_cdn( $href ) ) {
+					$css = $this->load_remote( $href );
+				} else {
 					continue;
 				}
-				$css = $this->load( $path, $href );
 				if ( null === $css ) {
 					continue;
 				}
@@ -80,6 +102,40 @@ class Css {
 			}
 		}
 		return $html;
+	}
+
+	/** Public CDNs that serve versioned, unchanging files (safe to download and clean). */
+	const PUBLIC_CDNS = array( 'cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'unpkg.com', 'use.fontawesome.com', 'maxcdn.bootstrapcdn.com', 'stackpath.bootstrapcdn.com', 'code.jquery.com', 'ajax.googleapis.com' );
+
+	public static function is_public_cdn( $url ) {
+		$host = strtolower( (string) wp_parse_url( 0 === strpos( $url, '//' ) ? 'https:' . $url : $url, PHP_URL_HOST ) );
+		return in_array( $host, self::PUBLIC_CDNS, true ) && preg_match( '#\.css(\?|$)#i', $url );
+	}
+
+	/**
+	 * Downloads a stylesheet from a public CDN once (kept for 7 days) and prepares it like a local one.
+	 * Fonts and images inside it keep loading from the CDN.
+	 */
+	public function load_remote( $href ) {
+		$url = 0 === strpos( $href, '//' ) ? 'https:' . $href : $href;
+		$key = 'remote-' . md5( $url . '|' . Settings::signature() ) . '.css';
+		$file = Assets::dir( 'memo' ) . '/' . $key;
+		if ( is_file( $file ) && filemtime( $file ) > time() - 7 * DAY_IN_SECONDS ) {
+			return Assets::memo_get( $key );
+		}
+		$fail = 'fast_wp_cdn_fail_' . md5( $url );
+		if ( get_transient( $fail ) ) {
+			return null;
+		}
+		$res  = wp_remote_get( $url, array( 'timeout' => 6 ) );
+		$body = is_wp_error( $res ) ? '' : (string) wp_remote_retrieve_body( $res );
+		if ( 200 !== (int) wp_remote_retrieve_response_code( $res ) || '' === trim( $body ) || strlen( $body ) > 3 * MB_IN_BYTES ) {
+			set_transient( $fail, 1, HOUR_IN_SECONDS );
+			return null;
+		}
+		$css = self::prepare( $body, $url );
+		Assets::memo_set( $key, $css );
+		return $css;
 	}
 
 	/**

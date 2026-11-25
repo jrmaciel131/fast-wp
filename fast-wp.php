@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Fast WP
  * Description:       Page cache and performance optimizations with no paid tier: unused CSS removal, delayed JS, lazy load, main image (LCP), self-hosted Google Fonts, WebP, cleanup and database. Built for Elementor sites.
- * Version:           0.1.1
+ * Version:           0.1.2
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * License:           GPL-2.0-or-later
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'FAST_WP_VERSION', '0.1.1' );
+define( 'FAST_WP_VERSION', '0.1.2' );
 define( 'FAST_WP_FILE', __FILE__ );
 define( 'FAST_WP_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FAST_WP_URL', plugin_dir_url( __FILE__ ) );

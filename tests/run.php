@@ -156,6 +156,28 @@ $o = array();
 exec( 'node --check ' . escapeshellarg( $tmp ) . ' 2>&1', $o, $code );
 check( 0 === $code || 127 === $code, 'loader is valid JavaScript' . ( $code && 127 !== $code ? ': ' . implode( ' ', $o ) : '' ) );
 
+echo "\n== Image dimensions, CDN CSS and duplicates ==\n";
+// Minimal PNG header (getimagesize only reads the IHDR chunk): 1080 x 1350.
+@mkdir( WP_CONTENT_DIR . '/uploads', 0777, true );
+file_put_contents( WP_CONTENT_DIR . '/uploads/slide.png', "\x89PNG\r\n\x1a\n" . "\x00\x00\x00\x0dIHDR" . pack( 'NN', 1080, 1350 ) . "\x08\x02\x00\x00\x00" . "\x00\x00\x00\x00" );
+$cdn_url = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+$GLOBALS['fwp_http_stub'][ $cdn_url ] = '@font-face{font-family:"Font Awesome 6 Brands";src:url(../webfonts/fa-brands-400.woff2)}.fab{font-family:"Font Awesome 6 Brands"}.fa-whatsapp:before{content:"\f232"}' . str_repeat( '.fa-unused-x:before{content:"x"}', 400 );
+$page4 = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>T</title></head><body><main><p>text</p>'
+	. '<div class="carousel"><img class="swiper-slide-image" src="' . FWP_TEST_HOME . '/wp-content/uploads/slide.png" alt="a" loading="lazy" /></div>'
+	. '<img src="' . FWP_TEST_HOME . '/wp-content/uploads/slide.png" width="540" alt="b">'
+	. '<link rel="stylesheet" href="' . $cdn_url . '"><a class="whatsapp"><i class="fab fa-whatsapp"></i></a>'
+	. '<link rel="stylesheet" href="' . $cdn_url . '">'
+	. '</main></body></html>';
+$out4 = ( new Optimizer() )->process( $page4 );
+check( (bool) preg_match( '#<img[^>]*class="swiper-slide-image"[^>]*width="1080"[^>]*height="1350"#', $out4 ), 'missing width/height filled from the file' );
+check( (bool) preg_match( '#<img[^>]*width="540"[^>]*height="675"#', $out4 ), 'only width set: height keeps the proportion' );
+check( false !== strpos( $out4, ':where(img[data-fwp-dim]){height:auto}' ), 'height:auto CSS with zero specificity' );
+check( ! preg_match( '#<link[^>]*rel="stylesheet"[^>]*href="https://cdnjs#', $out4 ), 'CDN stylesheet no longer blocks rendering' );
+check( false !== strpos( $out4, '.fa-whatsapp:before' ) && false === strpos( $out4, 'fa-unused-x' ), 'CDN CSS cleaned to what the page uses' );
+check( false !== strpos( $out4, 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-brands-400.woff2' ), 'CDN font URL kept absolute' );
+check( 1 === substr_count( $out4, '.fa-whatsapp:before' ), 'duplicate stylesheet removed' );
+unset( $GLOBALS['fwp_http_stub'] );
+
 echo "\n== wp-config.php (WP_CACHE) ==\n";
 require_once FAST_WP_DIR . 'includes/class-cache.php';
 $wpconfig = ABSPATH . 'wp-config.php';

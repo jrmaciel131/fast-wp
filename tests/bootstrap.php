@@ -113,6 +113,10 @@ class WP_Error {
 	}
 }
 function wp_remote_get( $url, $args = array() ) {
+	// Canned responses set by a test.
+	if ( isset( $GLOBALS['fwp_http_stub'][ $url ] ) ) {
+		return array( 'body' => $GLOBALS['fwp_http_stub'][ $url ], 'response' => array( 'code' => 200 ) );
+	}
 	if ( getenv( 'FWP_TEST_ONLINE' ) && function_exists( 'curl_init' ) ) {
 		$ch = curl_init( $url );
 		curl_setopt_array( $ch, array( CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_TIMEOUT => 15, CURLOPT_USERAGENT => isset( $args['user-agent'] ) ? $args['user-agent'] : 'test' ) );

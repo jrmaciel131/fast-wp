@@ -86,6 +86,8 @@ return array(
 	'Skip lazy load for the first images'                      => 'Não aplicar lazy load nas primeiras imagens',
 	'How many images at the top load right away (logo and banner).' => 'Quantidade de imagens do topo que carregam na hora (logo e banner).',
 	'Lazy load iframes (maps, videos)'                         => 'Lazy load de iframes (mapas, vídeos)',
+	'Add missing image width and height'                       => 'Preencher largura e altura das imagens sem medida',
+	'Reads the size of the image file so the browser reserves its space. Stops the page from jumping while images load (CLS), common in Elementor carousels.' => 'Lê o tamanho do arquivo da imagem para o navegador reservar o espaço dela. Evita que a página pule enquanto as imagens carregam (CLS), comum em carrosséis do Elementor.',
 	'Replace YouTube videos with a thumbnail'                  => 'Trocar vídeos do YouTube por miniatura',
 	'The player only loads on click. Saves about 500 KB per video.' => 'O player só carrega no clique. Economiza cerca de 500 KB por vídeo.',
 	'Lazy load background images written in the HTML'          => 'Lazy load de imagens de fundo escritas no HTML',

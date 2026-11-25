@@ -157,7 +157,7 @@ class Js {
 	public static function loader( array $cfg ) {
 		$json = wp_json_encode( $cfg );
 		$js   = <<<'JS'
-(function(w,d){var c=W_CFG,ev=["keydown","mousedown","mousemove","touchstart","touchmove","wheel","scroll","pointerdown"],started=false,done=false,clicked=null;
+(function(w,d){var c=W_CFG,ev=["keydown","mousedown","mousemove","touchstart","touchmove","wheel","pointerdown"],started=false,done=false,clicked=null;
 function each(l,f){Array.prototype.forEach.call(l,f)}
 function css(){each(d.querySelectorAll("link[data-fwp-href]"),function(l){l.href=l.getAttribute("data-fwp-href");l.removeAttribute("data-fwp-href")})}
 function stop(){ev.forEach(function(e){w.removeEventListener(e,go,{passive:true})})}
@@ -195,9 +195,13 @@ JS;
 		return '<script id="fwp-loader" data-fwp-skip>' . str_replace( 'W_CFG', $json, $js ) . '</script>';
 	}
 
-	/** Small CSS used by the YouTube thumbnail and animated elements. */
-	public static function inline_css( $youtube, $animations ) {
+	/** Small CSS used by the YouTube thumbnail, animated elements and images that got dimensions. */
+	public static function inline_css( $youtube, $animations, $dimensions = false ) {
 		$css = '';
+		if ( $dimensions ) {
+			// Zero specificity: any theme rule that sets a height still wins; the width/height ratio is kept.
+			$css .= ':where(img[data-fwp-dim]){height:auto}';
+		}
 		if ( $youtube ) {
 			$css .= '.fwp-yt{position:relative;display:block;width:100%;aspect-ratio:16/9;background:#000;cursor:pointer;overflow:hidden}'
 				. '.fwp-yt img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}'

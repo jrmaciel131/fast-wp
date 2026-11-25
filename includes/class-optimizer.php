@@ -61,7 +61,7 @@ class Optimizer {
 
 		// <head> items: preloads and the plugin's own CSS.
 		$animations = $js->has_delayed && Settings::get( 'elementor_animations' );
-		$head       = implode( '', $media->preloads ) . implode( '', $fonts->preloads ) . Js::inline_css( $media->uses_youtube, $animations );
+		$head       = implode( '', $media->preloads ) . implode( '', $fonts->preloads ) . Js::inline_css( $media->uses_youtube, $animations, $media->added_dimensions );
 		$html       = Html::after_head_open( $html, $head );
 
 		$fallback = Settings::get( 'used_css_fallback' );

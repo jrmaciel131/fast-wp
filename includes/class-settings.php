@@ -115,6 +115,7 @@ class Settings {
 				'fields' => array(
 					'lazy_images'      => array( 'checkbox', 1, t( 'Lazy load images' ), t( 'Images outside the screen only load when the visitor reaches them.' ) ),
 					'lazy_skip'        => array( 'number', 3, t( 'Skip lazy load for the first images' ), t( 'How many images at the top load right away (logo and banner).' ) ),
+					'image_dimensions' => array( 'checkbox', 1, t( 'Add missing image width and height' ), t( 'Reads the size of the image file so the browser reserves its space. Stops the page from jumping while images load (CLS), common in Elementor carousels.' ) ),
 					'lazy_iframes'     => array( 'checkbox', 1, t( 'Lazy load iframes (maps, videos)' ), '' ),
 					'youtube_facade'   => array( 'checkbox', 1, t( 'Replace YouTube videos with a thumbnail' ), t( 'The player only loads on click. Saves about 500 KB per video.' ) ),
 					'lazy_bg'          => array( 'checkbox', 1, t( 'Lazy load background images written in the HTML' ), t( 'For Elementor backgrounds, also enable "Lazy Load Background Images" in Elementor > Settings > Features.' ) ),
