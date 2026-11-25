@@ -177,6 +177,15 @@ check( false !== strpos( $out4, '.fa-whatsapp:before' ) && false === strpos( $ou
 check( false !== strpos( $out4, 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-brands-400.woff2' ), 'CDN font URL kept absolute' );
 check( 1 === substr_count( $out4, '.fa-whatsapp:before' ), 'duplicate stylesheet removed' );
 unset( $GLOBALS['fwp_http_stub'] );
+// Elementor prints page/widget stylesheets at the end of <body>: their used CSS must be in <head>.
+file_put_contents( WP_CONTENT_DIR . '/themes/t/css/late.css', '.hero{display:flex}.late-unused{color:red}' );
+$page5 = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>T</title></head><body><header class="hero">x</header>' . str_repeat( '<p>text</p>', 50 )
+	. "<link rel='stylesheet' id='late-css' href='" . FWP_TEST_HOME . "/wp-content/themes/t/css/late.css' media='all' /></body></html>";
+$out5 = ( new Optimizer() )->process( $page5 );
+$head_end = stripos( $out5, '</head>' );
+$used_at  = strpos( $out5, 'id="late-css-used"' );
+check( false !== $used_at && $used_at < $head_end, 'used CSS of a stylesheet in <body> moved to <head>' );
+check( (bool) preg_match( '#<link[^>]*id="late-css"[^>]*data-fwp-href=#', substr( $out5, $head_end ) ), 'full CSS placeholder stays in its original place' );
 
 echo "\n== wp-config.php (WP_CACHE) ==\n";
 require_once FAST_WP_DIR . 'includes/class-cache.php';

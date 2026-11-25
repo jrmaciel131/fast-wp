@@ -258,12 +258,24 @@ class Css {
 
 		$fallback = Settings::get( 'used_css_fallback' );
 		$count    = count( $sheets );
+		$body_at  = stripos( $html, '<body' );
+		$to_head  = '';
 		foreach ( array_merge( $sheets, $inline ) as $i => $s ) {
 			$css = str_replace( '</style', '<\/style', $output[ $i ] );
 			if ( $i < $count ) {
 				$id    = isset( $s['attrs']['id'] ) ? preg_replace( '/[^a-zA-Z0-9_-]/', '', $s['attrs']['id'] ) : 'fwp-' . $i;
 				$media = ( '' !== $s['media'] && 'all' !== $s['media'] ) ? ' media="' . esc_attr( $s['media'] ) . '"' : '';
-				$new   = '' === $css ? '' : '<style id="' . esc_attr( $id ) . '-used" data-fwp-used' . $media . '>' . $css . '</style>';
+				$style = '' === $css ? '' : '<style id="' . esc_attr( $id ) . '-used" data-fwp-used' . $media . '>' . $css . '</style>';
+				$new   = '';
+				// Stylesheets linked inside <body> (Elementor prints page and widget CSS at the end of the page):
+				// their used CSS goes to <head>, so it is ready for the first paint. Otherwise the top of the
+				// page is drawn unstyled while the rest of a long HTML downloads, and then jumps (CLS).
+				$tag_at = strpos( $html, $s['tag'] );
+				if ( false !== $body_at && false !== $tag_at && $tag_at > $body_at ) {
+					$to_head .= $style;
+				} else {
+					$new = $style;
+				}
 				if ( 'none' !== $fallback ) {
 					$attrs = $s['attrs'];
 					$orig  = Assets::write( $s['css'], 'css' );
@@ -276,6 +288,9 @@ class Css {
 			} else {
 				$html = str_replace( $s['tag'], '' === $css ? '' : $s['open'] . $css . '</style>', $html );
 			}
+		}
+		if ( '' !== $to_head ) {
+			$html = Html::before_head_close( $html, $to_head );
 		}
 		return $html;
 	}
